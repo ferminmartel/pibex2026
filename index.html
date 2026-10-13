@@ -304,6 +304,8 @@ tr.me td{background:var(--lake-soft)}
 .carr{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);color:var(--ink);cursor:pointer;font-size:1.2rem;line-height:1;display:grid;place-items:center;padding:0}
 .carr:hover:not(:disabled){border-color:var(--ink)}
 .carr:disabled{opacity:.3;cursor:default}
+.wxday.hist{border-style:dashed;background:transparent}
+.wxday .tag{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
 
 /* ---- Identidad oficial PIBEX 2026: azul marino + crema del escudo, ámbar cervecero como acento ---- */
 :root{
@@ -766,12 +768,22 @@ const likes = id => refs("like",id);
 
 /* ---- Clima (Open-Meteo, sin clave) ---- */
 let WX=null, WX_LOADING=false;
+const TRIP_DATES=["2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31"];
 const WMO=c=>c===0?["☀️","Despejado"]:c<=2?["🌤️","Algo nublado"]:c===3?["☁️","Nublado"]:c<=48?["🌫️","Niebla"]:c<=57?["🌦️","Llovizna"]:c<=67?["🌧️","Lluvia"]:c<=77?["🌨️","Nieve"]:c<=82?["🌦️","Chaparrones"]:c<=86?["❄️","Nieve"]:["⛈️","Tormenta"];
 async function loadWeather(){
   if(WX){ paintWeather(); return; } if(WX_LOADING) return; WX_LOADING=true;
   try{
     const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=-41.13&longitude=-71.31&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=America%2FArgentina%2FBuenos_Aires&forecast_days=16");
     const j=await r.json(); if(!j.daily) throw 0; WX=j;
+    const missing=TRIP_DATES.filter(x=>!j.daily.time.includes(x));
+    if(missing.length){
+      try{
+        const h=await (await fetch("https://archive-api.open-meteo.com/v1/archive?latitude=-41.13&longitude=-71.31&start_date=2021-10-20&end_date=2025-11-01&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=America%2FArgentina%2FBuenos_Aires")).json();
+        WX.hist=missing.map(x=>{const md=x.slice(5); const idx=h.daily.time.map((t,i)=>t.slice(5)===md?i:-1).filter(i=>i>=0);
+          const avg=k=>idx.reduce((s,i)=>s+(h.daily[k][i]??0),0)/(idx.length||1);
+          return {date:x,max:avg("temperature_2m_max"),min:avg("temperature_2m_min"),rainy:idx.filter(i=>(h.daily.precipitation_sum[i]||0)>=1).length,years:idx.length};});
+      }catch(e){ WX.hist=[]; }
+    }
   }catch(e){ WX={err:true}; }
   WX_LOADING=false; paintWeather();
 }
@@ -783,9 +795,9 @@ function paintWeather(){
   const short=x=>{const dt=new Date(x+"T12:00:00-03:00");return ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][dt.getDay()]+" "+x.slice(8)};
   el.innerHTML=`<div class="wxnow"><span class="e">${e}</span><div><div class="big">${Math.round(c.temperature_2m)}°</div><div class="small">${t} · sensación ${Math.round(c.apparent_temperature)}°</div><div class="muted small">Viento ${Math.round(c.wind_speed_10m)} km/h · humedad ${c.relative_humidity_2m}%</div></div></div>
   <div class="carousel"><button class="carr l" data-act="wx-l" aria-label="Días anteriores">‹</button>
-    <div class="wxtrack" id="wxtrack">${d.time.map((x,i)=>{const [ee,tt]=WMO(d.weather_code[i]);const trip=x>="2026-10-24"&&x<="2026-10-31";return `<div class="wxday ${trip?"trip":""}" title="${tt}"><b>${short(x)}</b><span class="e">${ee}</span><span class="tmp">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</span><span class="muted">💧${d.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div>
+    <div class="wxtrack" id="wxtrack">${d.time.map((x,i)=>{const [ee,tt]=WMO(d.weather_code[i]);const trip=x>="2026-10-24"&&x<="2026-10-31";return `<div class="wxday ${trip?"trip":""}" title="${tt}"><b>${short(x)}</b><span class="e">${ee}</span><span class="tmp">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</span><span class="muted">💧${d.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}${(WX.hist||[]).map(h=>`<div class="wxday trip hist" title="Promedio de los últimos ${h.years} años"><b>${short(h.date)}</b><span class="e">📊</span><span class="tmp">${Math.round(h.max)}° / ${Math.round(h.min)}°</span><span class="muted" title="Años con lluvia ese día">☔ ${h.rainy} de ${h.years}</span><span class="tag">histórico</span></div>`).join("")}</div>
     <button class="carr r" data-act="wx-r" aria-label="Días siguientes">›</button></div>
-  <p class="muted small">${tripDays?`Recuadrados: días del viaje (${tripDays} de 8 con pronóstico). El resto aparece a medida que se acerca la fecha.`:"Los días del viaje aparecen recuadrados a medida que entran en el pronóstico."}</p>`;
+  <p class="muted small">Recuadrados: los 8 días del viaje.${(WX.hist||[]).length?` Los marcados «histórico» todavía están fuera del pronóstico (llega a 16 días) y muestran el promedio de esa fecha en los últimos años; se reemplazan solos por el pronóstico real a medida que se acerca.`:""}</p>`;
   const tr=$("#wxtrack"); const upd=()=>{ $("[data-act=wx-l]").disabled=tr.scrollLeft<=2; $("[data-act=wx-r]").disabled=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-2; };
   tr.addEventListener("scroll",upd,{passive:true}); upd();
 }
