@@ -306,6 +306,19 @@ tr.me td{background:var(--lake-soft)}
 .carr:disabled{opacity:.3;cursor:default}
 .wxday.hist{border-style:dashed;background:transparent}
 .wxday .tag{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.micbtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 12px;cursor:pointer;font-size:.85rem;white-space:nowrap}
+.micbtn:hover{border-color:var(--ink)}
+.micbtn.rec{background:var(--stamp);border-color:var(--stamp);color:#fff;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.75}}
+@media (prefers-reduced-motion:reduce){.micbtn.rec{animation:none}}
+.recprev{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
+.recprev audio,.aud audio{height:36px;max-width:100%}
+.aud{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
+.cform{flex-wrap:wrap}
+.cform input{flex:1 1 160px}
+.vidbg{position:absolute;inset:0;background:linear-gradient(135deg,var(--brand),var(--brand-2));z-index:0}
+.ph video,.ph .play{position:relative;z-index:1}
+.ph .play{position:absolute}
 
 /* ---- Identidad oficial PIBEX 2026: azul marino + crema del escudo, ámbar cervecero como acento ---- */
 :root{
@@ -410,7 +423,9 @@ const CONFIG = {
   SUPABASE_URL: "https://qwzgqxzfvldhsenjgbaw.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emdxeHpmdmxkaHNlbmpnYmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTczMjAsImV4cCI6MjEwNzQ3MzMyMH0.VEc-4oKOFXbt_yB2HHyfYeVee5Rtxgt-0jkrWzJ13M4",
   MANSION: "San Carlos de Bariloche",
-  VAPID_PUBLIC: "BFvl5FRxltZ4uRVtaTOu8Y5v9SVWxTV8Gsg_21EbJ7e-TFMXH9VV5HKvYxcoeq6LV3SZ3auVwBVOXZyZD4phcs0"   // clave pública para avisos push
+  VAPID_PUBLIC: "BFvl5FRxltZ4uRVtaTOu8Y5v9SVWxTV8Gsg_21EbJ7e-TFMXH9VV5HKvYxcoeq6LV3SZ3auVwBVOXZyZD4phcs0",   // clave pública para avisos push
+  CLOUDINARY_CLOUD: "fmznudai",           // cloud name de Cloudinary (fotos, videos y audios)
+  CLOUDINARY_PRESET: "Pibex2026"  // upload preset sin firma
 };
 
 /* ================= Datos base ================= */
@@ -583,6 +598,20 @@ const Store = {
     ITEMS=ITEMS.filter(i=>i.id!==id);
     if(ONLINE){ const {error}=await sb.from("items").delete().eq("id",id); if(error) throw error; } else this.persist();
   },
+  /* Fotos, videos y audios: Cloudinary si está configurado (25 GB gratis), si no Supabase */
+  async media(blob,kind,ext,type){
+    if(ONLINE && CONFIG.CLOUDINARY_CLOUD){
+      const fd=new FormData(); fd.append("file",blob,"pibex."+ext); fd.append("upload_preset",CONFIG.CLOUDINARY_PRESET); fd.append("folder","pibex2026/"+kind);
+      const r=await fetch(`https://api.cloudinary.com/v1_1/${CONFIG.CLOUDINARY_CLOUD}/${kind==="foto"?"image":"video"}/upload`,{method:"POST",body:fd});
+      const j=await r.json(); if(!r.ok||!j.secure_url) throw new Error((j.error&&j.error.message)||"Cloudinary rechazó el archivo");
+      const u=j.secure_url, tr=(t,ext2)=>{ let x=u.replace("/upload/","/upload/"+t+"/"); if(ext2) x=x.replace(/\.[a-z0-9]+$/i,"."+ext2); return x; };
+      if(kind==="foto") return {url:tr("q_auto,f_auto"),thumb:tr("c_fill,w_480,h_480,q_auto,f_auto"),dl:tr("fl_attachment")};
+      if(kind==="video") return {url:u,thumb:tr("so_1,c_fill,w_480,h_480,q_auto","jpg"),dl:tr("fl_attachment")};
+      return {url:tr("q_auto","mp3")};
+    }
+    const url=await this.upload(blob,ext,type);
+    return {url,dl:ONLINE?url+"?download=pibex2026."+ext:url};
+  },
   async upload(blob,ext,type){
     if(ONLINE){ const path=Date.now()+"-"+uid()+"."+ext; const {error}=await sb.storage.from("fotos").upload(path,blob,{contentType:type}); if(error) throw error; return sb.storage.from("fotos").getPublicUrl(path).data.publicUrl; }
     return await new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.readAsDataURL(blob)});
@@ -686,6 +715,36 @@ function liveRefresh(){
 /* ================= Componentes ================= */
 const canDel = it => ME && (it.author===ME.name || isOrg(ME.name));
 const delBtn = it => canDel(it) ? `<button class="link danger" data-act="del" data-id="${it.id}">borrar</button>`:"";
+/* ---- Audios tipo WhatsApp ---- */
+let REC=null;
+function pickMime(){ const c=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"]; try{ return c.find(m=>MediaRecorder.isTypeSupported(m))||""; }catch(e){ return ""; } }
+const fmtDur=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+function recSlot(key){
+  if(REC&&REC.key===key&&REC.mr) return `<button type="button" class="micbtn rec" data-act="rec-stop">⏹ Parar · ${fmtDur(Math.floor((Date.now()-REC.start)/1000))}</button>`;
+  if(REC&&REC.key===key&&REC.blob) return `<span class="recprev"><audio controls src="${REC.url}"></audio><button type="button" class="link danger" data-act="rec-clear">descartar</button></span>`;
+  return `<button type="button" class="micbtn" data-act="rec-start" data-id="${esc(key)}" aria-label="Grabar audio">🎙️ Audio</button>`;
+}
+function paintRec(){ document.querySelectorAll("[data-slot]").forEach(sl=>{ sl.innerHTML=recSlot(sl.dataset.slot); }); }
+async function recStart(key){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.MediaRecorder){ toast("Este navegador no permite grabar audio."); return; }
+  if(REC&&REC.mr) return; if(REC) recClear();
+  let stream; try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ toast("Sin permiso de micrófono. Habilitalo en el navegador."); return; }
+  const mime=pickMime(); const mr=new MediaRecorder(stream, mime?{mimeType:mime,audioBitsPerSecond:40000}:{audioBitsPerSecond:40000});
+  const chunks=[]; const start=Date.now();
+  mr.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+  mr.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); clearInterval(REC&&REC.timer); const type=(mr.mimeType||mime||"audio/webm").split(";")[0]; const blob=new Blob(chunks,{type}); REC={key,blob,url:URL.createObjectURL(blob),mime:type,dur:Math.max(1,Math.round((Date.now()-start)/1000))}; paintRec(); };
+  REC={key,mr,start,stream}; mr.start(250); paintRec();
+  REC.timer=setInterval(()=>{ if(!REC||!REC.mr) return; paintRec(); if(Date.now()-start>180000){ toast("Máximo 3 minutos"); recStop(); } },500);
+}
+function recStop(){ if(REC&&REC.mr){ clearInterval(REC.timer); const mr=REC.mr; mr.stop(); } }
+function recClear(){ if(REC&&REC.mr){ clearInterval(REC.timer); REC.mr.onstop=null; try{REC.mr.stop()}catch(e){} REC.stream.getTracks().forEach(t=>t.stop()); } if(REC&&REC.url) URL.revokeObjectURL(REC.url); REC=null; paintRec(); }
+async function takeAudio(key){
+  if(!(REC&&REC.key===key&&REC.blob)) return null;
+  const ext=REC.mime.includes("mp4")?"m4a":REC.mime.includes("ogg")?"ogg":"webm";
+  const {url}=await Store.media(REC.blob,"audio",ext,REC.mime); const dur=REC.dur; recClear(); return {audio:url,dur};
+}
+const audioEl = it => it.data.audio?`<div class="aud"><audio controls preload="none" src="${esc(it.data.audio)}"></audio><span class="muted small">🎙️ ${fmtDur(it.data.dur||0)}</span></div>`:"";
+
 function likeBar(id){
   const ls=likes(id); const yo=ME&&ls.find(l=>l.author===ME.name);
   const names=ls.map(l=>l.author); const who=names.length>3?names.slice(0,3).join(", ")+" y "+(names.length-3)+" más":names.join(", ");
@@ -693,15 +752,15 @@ function likeBar(id){
 }
 function msgText(it,cls){
   if(EDIT===it.id) return `<form class="stack" data-form="edit" data-id="${it.id}" style="gap:6px"><textarea id="ed-${it.id}" name="text" required maxlength="2000">${esc(it.data.text)}</textarea><div class="row"><button class="btn sm">Guardar</button><button type="button" class="btn ghost sm" data-act="edit-cancel">Cancelar</button></div></form>`;
-  return `<div class="${cls}">${esc(it.data.text)}${it.data.edited?` <span class="muted small">(editado)</span>`:""}</div>`;
+  return (it.data.text?`<div class="${cls}">${esc(it.data.text)}${it.data.edited?` <span class="muted small">(editado)</span>`:""}</div>`:"")+audioEl(it);
 }
-const editBtn = it => ME&&it.author===ME.name&&EDIT!==it.id ? `<button class="link" data-act="edit" data-id="${it.id}">editar</button>`:"";
+const editBtn = it => ME&&it.author===ME.name&&EDIT!==it.id&&it.data.text ? `<button class="link" data-act="edit" data-id="${it.id}">editar</button>`:"";
 function thread(ref,label="comentarios"){
   const cs = refs("comment",ref); const open = OPEN.has(ref) || cs.length<=2;
   return `<div class="thread">
     ${cs.length>2 && !OPEN.has(ref) ? `<button class="link" data-act="open" data-id="${ref}">Ver los ${cs.length} ${label}</button>`:""}
     ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div class="stack" style="gap:2px"><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${editBtn(c)}${delBtn(c)}</div>${msgText(c,"txt")}${likeBar(c.id)}</div></div>`).join(""):""}
-    <form class="cform" data-form="comment" data-ref="${ref}"><input type="text" id="c-${ref}" name="text" placeholder="Comentar…" autocomplete="off" required maxlength="500"><button class="btn sm">Enviar</button></form>
+    <form class="cform" data-form="comment" data-ref="${ref}"><input type="text" id="c-${ref}" name="text" placeholder="Comentar…" autocomplete="off" maxlength="500"><span data-slot="c-${ref}">${recSlot("c-"+ref)}</span><button class="btn sm">Enviar</button></form>
   </div>`;
 }
 function docBody(text){
@@ -852,12 +911,12 @@ inicio(){
     <section class="sheet"><span class="eyebrow">Tu cuarto</span>
       ${myRoom?`<h3>${esc(myRoom.name)}</h3><p class="small muted">Con ${esc(PEOPLE.filter(p=>rc.assign[p]===myRoom.id&&p!==ME.name).join(", ")||"nadie, suerte")}</p>`:`<p class="empty">${rc.drawnAt?"No te tocó cuarto todavía.":"El sorteo de cuartos todavía no se hizo."}</p>`}
       <button class="link" data-tab="cuartos">Ver cuartos</button></section>
-    ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span>${topPh.data.type==="video"?`<video class="thumb" src="${esc(topPh.data.url)}" muted playsinline preload="metadata"></video>`:`<img class="thumb" src="${esc(topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}">`}<span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
+    ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span>${topPh.data.type==="video"?`<video class="thumb" src="${esc(topPh.data.url)}" muted playsinline preload="metadata"></video>`:`<img class="thumb" src="${esc(topPh.data.thumb||topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}">`}<span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
     ${charla?`<section class="sheet"><span class="eyebrow">El más charlatán del muro</span><h3>${esc(charla[0])}</h3><p class="small muted">${charla[1]} publicaciones y comentarios</p><button class="link" data-tab="muro">Ir al muro</button></section>`:""}
   </div>
   <section class="sheet">
     <div class="row between"><span class="eyebrow">${nuevos.length?`${nuevos.length} novedades desde tu última visita`:"Movimiento reciente"}</span><button class="iconbtn" data-act="notif">🔔 Avisos al celu</button></div>
-    ${feed.length?`<div class="feed">${feed.map(i=>`<div class="it">${av(i.author)}<span><b>${esc(i.author)}</b> ${feedKinds[i.kind]}${i.data.text||i.data.title?`: <span class="muted">${esc((i.data.text||i.data.title).slice(0,70))}</span>`:""}</span><span class="muted small">${ago(i.created_at)}</span></div>`).join("")}</div>`:`<p class="empty">Acá aparece todo lo que se publica.</p>`}
+    ${feed.length?`<div class="feed">${feed.map(i=>`<div class="it">${av(i.author)}<span><b>${esc(i.author)}</b> ${feedKinds[i.kind]}${i.data.text||i.data.title?`: <span class="muted">${esc((i.data.text||i.data.title).slice(0,70))}</span>`:i.data.audio?` <span class="muted">🎙️ un audio</span>`:""}</span><span class="muted small">${ago(i.created_at)}</span></div>`).join("")}</div>`:`<p class="empty">Acá aparece todo lo que se publica.</p>`}
   </section>`;
 },
 
@@ -896,7 +955,7 @@ cronograma(){
 muro(){
   const posts=of("post").slice().reverse();
   return `<div class="head"><span class="eyebrow">Foro general</span><h2>El Muro</h2><p>Ideas, preguntas, chicanas, todo. Cada publicación avisa al celular de los que activaron los avisos.</p></div>
-  <form class="sheet" data-form="post"><div class="field"><label for="post-t">Publicar</label><textarea id="post-t" name="text" required maxlength="2000" placeholder="¿Quién lleva el parlante?"></textarea></div><div><button class="btn">Publicar</button></div></form>
+  <form class="sheet" data-form="post"><div class="field"><label for="post-t">Publicar</label><textarea id="post-t" name="text" maxlength="2000" placeholder="¿Quién lleva el parlante? (o mandá un audio)"></textarea></div><div class="row"><span data-slot="post">${recSlot("post")}</span><button class="btn">Publicar</button></div></form>
   ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${editBtn(p)}${delBtn(p)}</div>${msgText(p,"txt")}${likeBar(p.id)}${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
 },
 
@@ -908,7 +967,7 @@ fotos(){
     <div class="field"><label for="ph-c">Epígrafe para todas (opcional)</label><input type="text" id="ph-c" name="caption" maxlength="140"></div></div>
     <div class="row"><button class="btn" id="ph-btn">Subir</button><span class="muted small" id="ph-status">Videos de hasta 50 MB (unos 30 segundos en buena calidad).</span></div></form>
   ${ph.length?`<div class="row between"><span class="eyebrow">${ph.length} archivos</span><div class="seg"><button data-act="psort" data-id="new" aria-pressed="${PHOTO_SORT==="new"}">Recientes</button><button data-act="psort" data-id="top" aria-pressed="${PHOTO_SORT==="top"}">Más likeadas</button></div></div>
-  <div class="photos">${ph.map(p=>{const n=likes(p.id).length;return `<button class="ph" data-act="photo" data-id="${p.id}">${p.data.type==="video"?`<video src="${esc(p.data.url)}#t=0.5" muted playsinline preload="metadata"></video><span class="play">▶</span>`:`<img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy">`}${n?`<span class="lk">❤️ ${n}</span>`:""}<span>${esc(p.data.caption||p.author)}</span></button>`}).join("")}</div>`:`<p class="empty">Todavía no hay nada. Arranquen con una del 2015 para calentar.</p>`}`;
+  <div class="photos">${ph.map(p=>{const n=likes(p.id).length;return `<button class="ph" data-act="photo" data-id="${p.id}">${p.data.type==="video"?(p.data.thumb?`<img src="${esc(p.data.thumb)}" alt="Video de ${esc(p.author)}" loading="lazy"><span class="play">▶</span>`:`<video src="${esc(p.data.url)}#t=0.5" muted playsinline preload="none"></video><span class="vidbg"></span><span class="play">▶</span>`):`<img src="${esc(p.data.thumb||p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy">`}${n?`<span class="lk">❤️ ${n}</span>`:""}<span>${esc(p.data.caption||p.author)}</span></button>`}).join("")}</div>`:`<p class="empty">Todavía no hay nada. Arranquen con una del 2015 para calentar.</p>`}`;
 },
 
 truco(){
@@ -1135,7 +1194,7 @@ function notifModal(){
 }
 function photoModal(id){
   const p=ITEMS.find(i=>i.id===id); if(!p) return; const ls=likes(id); const yo=ME&&ls.find(l=>l.author===ME.name);
-  const isV=p.data.type==="video"; const dl=ONLINE?p.data.url+"?download=pibex2026-"+id.slice(0,6)+(isV?".mp4":".jpg"):p.data.url;
+  const isV=p.data.type==="video"; const dl=p.data.dl||(ONLINE?p.data.url+"?download=pibex2026-"+id.slice(0,6)+(isV?".mp4":".jpg"):p.data.url);
   $("#overlay").innerHTML=`<div class="lb" data-act="close-bg"><figure>${isV?`<video src="${esc(p.data.url)}" controls playsinline autoplay></video>`:`<img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto")}">`}
     <figcaption><span>${esc(p.data.caption||"")} <span style="opacity:.7">· ${esc(p.author)} · ${ago(p.created_at)}</span></span>
     <span class="acts"><button class="btn sm" data-act="like" data-id="${id}">${yo?"❤️":"🤍"} ${ls.length||""}</button><button class="btn sm" data-act="share" data-id="${id}">Compartir</button><a class="btn ghost sm" href="${esc(dl)}" target="_blank" rel="noopener">Descargar</a>${canDel(p)?`<button class="link danger" data-act="del" data-id="${id}">Borrar</button>`:""}<button class="btn ghost sm" data-act="close">Cerrar</button></span></figcaption>
@@ -1175,6 +1234,9 @@ document.addEventListener("click", async ev=>{
   try{
   switch(act){
     case "tl": $("#tabs").scrollBy({left:-220,behavior:"smooth"}); break;
+    case "rec-start": if(!needMe())return; await recStart(id); break;
+    case "rec-stop": recStop(); break;
+    case "rec-clear": recClear(); break;
     case "wx-l": { const t=$("#wxtrack"); t.scrollBy({left:-t.clientWidth*.8,behavior:"smooth"}); break; }
     case "wx-r": { const t=$("#wxtrack"); t.scrollBy({left:t.clientWidth*.8,behavior:"smooth"}); break; }
     case "tr": $("#tabs").scrollBy({left:220,behavior:"smooth"}); break;
@@ -1247,8 +1309,10 @@ document.addEventListener("submit", async ev=>{
   try{
     switch(kind){
       case "edit": { const it=ITEMS.find(i=>i.id===f.dataset.id); if(!it||it.author!==ME.name) break; const t=d.text.trim(); if(t&&t!==it.data.text) await Store.update(it.id,{text:t,edited:new Date().toISOString()}); EDIT=null; break; }
-      case "comment": { const ref=f.dataset.ref; await Store.add("comment",{ref,text:d.text.trim()}); OPEN.add(ref); notify("💬 "+ME.name+" comentó",d.text); break; }
-      case "post": await Store.add("post",{text:d.text.trim()}); notify("📢 "+ME.name+" en el Muro",d.text); break;
+      case "comment": { const ref=f.dataset.ref; const t=(d.text||"").trim(); if(REC&&REC.mr){ toast("Pará la grabación primero"); break; } const au=await takeAudio("c-"+ref); if(!t&&!au){ toast("Escribí algo o grabá un audio"); break; }
+        await Store.add("comment",{ref,text:t,...(au||{})}); OPEN.add(ref); notify("💬 "+ME.name+" comentó",t||"🎙️ Mandó un audio"); break; }
+      case "post": { const t=(d.text||"").trim(); if(REC&&REC.mr){ toast("Pará la grabación primero"); break; } const au=await takeAudio("post"); if(!t&&!au){ toast("Escribí algo o grabá un audio"); break; }
+        await Store.add("post",{text:t,...(au||{})}); notify("📢 "+ME.name+" en el Muro",t||"🎙️ Mandó un audio"); break; }
       case "comunicado": { if(!org) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
       case "event": { const st=org?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:org?ME.name:undefined});
         notify(org?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(org?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
@@ -1268,8 +1332,11 @@ document.addEventListener("submit", async ev=>{
         for(const file of files){
           st.textContent=`Subiendo ${ok+skip+1} de ${files.length}…`;
           const isV=file.type.startsWith("video/");
-          if(isV){ if(!ONLINE||file.size>50*1024*1024){ skip++; continue; } const ext=(file.name.split(".").pop()||"mp4").toLowerCase(); const url=await Store.upload(file,ext,file.type); await Store.add("photo",{url,caption:d.caption.trim(),type:"video"}); }
-          else { const blob=await resize(file,ONLINE?2048:700); const url=await Store.upload(blob,"jpg","image/jpeg"); await Store.add("photo",{url,caption:d.caption.trim(),type:"image"}); }
+          if(isV){ const lim=CONFIG.CLOUDINARY_CLOUD?100:50; if(!ONLINE||file.size>lim*1024*1024){ skip++; continue; } const ext=(file.name.split(".").pop()||"mp4").toLowerCase(); const m=await Store.media(file,"video",ext,file.type); await Store.add("photo",{url:m.url,thumb:m.thumb||null,dl:m.dl||null,caption:d.caption.trim(),type:"video"}); }
+          else { const blob=await resize(file,ONLINE?1920:700);
+            if(ONLINE&&CONFIG.CLOUDINARY_CLOUD){ const m=await Store.media(blob,"foto","jpg","image/jpeg"); await Store.add("photo",{url:m.url,thumb:m.thumb,dl:m.dl,caption:d.caption.trim(),type:"image"}); }
+            else { const url=await Store.upload(blob,"jpg","image/jpeg"); let thumb=null; if(ONLINE){ try{ thumb=await Store.upload(await resize(file,480),"jpg","image/jpeg"); }catch(e){} }
+              await Store.add("photo",{url,thumb,caption:d.caption.trim(),type:"image"}); } }
           ok++;
         }
         if(skip) toast(`${skip} video${skip>1?"s":""} no se subieron (más de 50 MB${ONLINE?"":" o modo demo"}).`);
