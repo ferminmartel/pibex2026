@@ -414,6 +414,28 @@ h3{font-weight:700}
 .sheetframe iframe{display:block;width:100%;height:72vh;border:0}
 .rooms .name.hid{visibility:hidden}
 button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
+/* ---- Torneos de truco ---- */
+.seg{flex-wrap:wrap;max-width:100%}
+.seg.big2{display:flex;width:100%;border-radius:6px}
+.seg.big2 button{flex:1;padding:10px 12px;font-weight:600;font-size:.88rem}
+.match{display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.match>span:first-child{text-align:right}
+.match .win{font-weight:700}
+.match .sc{display:inline-flex;gap:4px;align-items:center}
+.match .sc input{width:52px;padding:6px;text-align:center}
+@media (max-width:480px){.match{grid-template-columns:1fr auto 1fr}.match>.btn,.match>.link{grid-column:1/-1;justify-self:center}}
+.champ{background:var(--gold-soft);border:1px solid var(--gold);border-radius:var(--r);padding:10px 14px;font-size:1.05rem}
+.anots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.anot{border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;display:grid;gap:8px;justify-items:center;text-align:center;background:var(--paper);min-width:0}
+.anot.gano{border:2px solid var(--gold);background:var(--gold-soft)}
+.anot .anm{font-family:var(--f-display);font-size:.9rem;overflow-wrap:anywhere}
+.anot .tanto{font-family:var(--f-display);font-weight:800;font-size:1.3rem}
+.fos{display:grid;justify-items:center;gap:2px}
+.fos.sep{border-top:2px dashed var(--line);padding-top:6px}
+.caja{width:56px;height:56px;display:block}
+.caja .palo{stroke:#C9A06A;stroke-width:4;stroke-linecap:round}
+.caja .cabeza{fill:#B8402F}
+.btn.sumar{font-size:1.4rem;padding:12px 26px}
 
 </style>
 
@@ -786,8 +808,10 @@ function allEvents(){
 }
 
 /* ---- Truco ---- */
-function trucoStats(){
-  const ind={}, par={}; const ms=of("truco");
+const tmode = m => (m.data.mode||4);
+const teamName = t => t.join(" & ");
+function trucoStats(mode){
+  const ind={}, par={}; const ms=of("truco").filter(m=>!mode||tmode(m)===mode);
   const bump=(o,k,won,pf,pc)=>{o[k]=o[k]||{k,pj:0,pg:0,pp:0,pf:0,pc:0,seq:[]};const r=o[k];r.pj++;won?r.pg++:r.pp++;r.pf+=pf;r.pc+=pc;r.seq.push(won)};
   ms.forEach(m=>{const d=m.data;const w1=d.s1>d.s2;
     bump(par,[...d.p1].sort().join(" & "),w1,d.s1,d.s2); bump(par,[...d.p2].sort().join(" & "),!w1,d.s2,d.s1);
@@ -797,6 +821,58 @@ function trucoStats(){
   Object.values(ind).concat(Object.values(par)).forEach(r=>{const s=streak(r.seq);r.best=s.best;r.cur=s.cur});
   return {ind:sort(ind),par:sort(par),ms};
 }
+/* Torneos: liga (todos contra todos, gana el que más partidos gana) o mata-mata */
+function tResult(tid,mid){ return of("truco").find(m=>m.data.tid===tid&&m.data.mid===mid); }
+function ligaTable(t){
+  const rows=t.teams.map((tm,i)=>({i,k:teamName(tm),pj:0,pg:0,pp:0,pf:0,pc:0}));
+  const fixtures=[]; for(let a=0;a<t.teams.length;a++) for(let b=a+1;b<t.teams.length;b++){ const mid=`l${a}-${b}`; const r=tResult(t.id,mid); fixtures.push({mid,a,b,r});
+    if(r){ const d=r.data, w=d.s1>d.s2; const A=rows[a],B=rows[b]; A.pj++;B.pj++; A.pf+=d.s1;A.pc+=d.s2;B.pf+=d.s2;B.pc+=d.s1; if(w){A.pg++;B.pp++}else{B.pg++;A.pp++} } }
+  const table=rows.slice().sort((x,y)=>y.pg-x.pg||(y.pf-y.pc)-(x.pf-x.pc)||y.pf-x.pf);
+  const done=fixtures.every(f=>f.r); return {table,fixtures,champion:done?t.teams[table[0].i]:null};
+}
+function bracket(t){
+  let size=1; while(size<t.teams.length) size*=2;
+  let cur=[...t.order.map(i=>i),...Array(size-t.teams.length).fill("BYE")];
+  // repartir los BYE para que no se enfrenten entre sí
+  if(size>t.teams.length){ const real=t.order.slice(), byes=size-t.teams.length; cur=[]; for(let k=0;k<size/2;k++){ cur.push(real.shift()); cur.push(k<byes?"BYE":real.shift()); } }
+  const rounds=[]; let r=0;
+  while(cur.length>1){ const ms=[], next=[];
+    for(let k=0;k<cur.length/2;k++){ const a=cur[2*k], b=cur[2*k+1], mid=`r${r}m${k}`; let w;
+      if(a==="BYE"&&b==="BYE") w="BYE"; else if(b==="BYE") w=a; else if(a==="BYE") w=b; else if(a==null||b==null) w=null;
+      else { const res=tResult(t.id,mid); w=res?(res.data.s1>res.data.s2?a:b):null; ms.push({mid,a,b,res,w}); next.push(w); continue; }
+      ms.push({mid,a,b,res:null,w,bye:a==="BYE"||b==="BYE"}); next.push(w); }
+    rounds.push(ms); cur=next; r++; }
+  const champ=cur[0]; return {rounds,champion:(champ!=null&&champ!=="BYE")?t.teams[champ]:null};
+}
+function torneos(){ return of("torneo").map(it=>({...it.data,id:it.id,item:it})); }
+function champOf(t){ return t.format==="liga"?ligaTable(t).champion:bracket(t).champion; }
+const roundName=(n,total,idx)=>n===1?"Final":n===2?"Semifinal":n===4?"Cuartos de final":"Ronda "+(idx+1);
+let ANOT=lsGet("pibex_anot");
+const saveAnot=()=>lsSet("pibex_anot",ANOT);
+function fosforos(n){ // n = 0..15 → 3 cuadraditos de 5 fósforos
+  const box=k=>{ const L=[[6,6,54,6],[54,6,54,54],[54,54,6,54],[6,54,6,6],[6,54,54,6]]; return `<svg viewBox="0 0 60 60" class="caja" aria-hidden="true">${L.slice(0,k).map(([x1,y1,x2,y2])=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="palo"/><circle cx="${x2}" cy="${y2}" r="3.6" class="cabeza"/>`).join("")}</svg>`; };
+  return [0,1,2].map(i=>box(Math.max(0,Math.min(5,n-i*5)))).join("");
+}
+function anotadorView(){
+  const lbl=TRUCO_MODE===4?"Pareja":"Equipo"; const sz=TRUCO_MODE/2;
+  if(!ANOT){ const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts("","(opcional)")}</select>`).join("");
+    return `<form class="sheet" data-form="anot-start"><span class="eyebrow">Anotador con fósforos</span>
+      <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6</button></div></div>
+      <div class="grid2"><div class="stack"><b>${lbl} 1</b><div class="fgrid">${sideSel("a")}</div></div><div class="stack"><b>${lbl} 2</b><div class="fgrid">${sideSel("b")}</div></div></div>
+      <p class="small muted">Los nombres son opcionales. Si los cargás, al terminar el partido lo guardás en el ranking con un toque. El anotador queda guardado en este celu aunque cierres la web.</p>
+      <div><button class="btn">Empezar partido</button></div></form>`; }
+  const A=ANOT, win=A.s[0]>=30?0:A.s[1]>=30?1:-1;
+  const side=i=>{ const n=A.s[i], malas=Math.min(15,n), buenas=Math.max(0,n-15); const nm=A.p[i].filter(Boolean).length?teamName(A.p[i].filter(Boolean)):lbl+" "+(i+1);
+    return `<div class="anot ${win===i?"gano":""}"><b class="anm">${esc(nm)}</b><div class="tanto">${n<15?"Malas · "+n:n<30?"Buenas · "+(n-15):"¡Ganó!"}</div>
+      <div class="fos"><span class="eyebrow">Malas</span>${fosforos(malas)}</div><div class="fos sep"><span class="eyebrow">Buenas</span>${fosforos(buenas)}</div>
+      <div class="row" style="justify-content:center"><button class="btn sumar" data-act="anot-add" data-id="${i}" ${win>=0?"disabled":""}>+1</button><button class="btn ghost sm" data-act="anot-sub" data-id="${i}" ${n===0?"disabled":""}>−1</button></div></div>`; };
+  const full=A.p.every(t=>t.length===A.mode/2&&t.every(Boolean));
+  return `<section class="sheet"><div class="row between"><span class="eyebrow">Anotador · de a ${A.mode} · a 30</span>${armBtn("anot-reset","Terminar / nuevo partido","Confirmar: se borra este anotador","anot-reset","btn ghost sm")}</div>
+    <div class="anots">${side(0)}${side(1)}</div>
+    ${win>=0?`<div class="champ">🏆 Ganó <b>${esc(A.p[win].filter(Boolean).length?teamName(A.p[win].filter(Boolean)):lbl+" "+(win+1))}</b> · ${A.s[0]} a ${A.s[1]}
+      ${full?`<div style="margin-top:8px"><button class="btn" data-act="anot-save">Guardar en el ranking</button></div>`:`<p class="small muted">Como no cargaste los nombres, no se guarda en el ranking.</p>`}</div>`:""}</section>`;
+}
+let TRUCO_SUB="partidos", TRUCO_MODE=4, TF={mode:4,format:"liga",n:4,name:""};
 
 /* ---- Awards ---- */
 function awardsCfg(){ const it=latest("awards"); return it? {...it.data,_id:it.id} : {phase:"hidden",cats:DEFAULT_CATS}; }
@@ -882,7 +958,7 @@ inicio(){
   <div class="tiles">
     ${tile("inicio","Ya entraron",`${claimed.length}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,missing.length?("Faltan: "+esc(missing.slice(0,5).map(n=>n.split(" ")[0]+" "+n.split(" ").slice(-1)[0][0]+".").join(", "))+(missing.length>5?"…":"")):"Están todos")}
     ${tile("cronograma","Planes aprobados",approved.length,`${pend.length} propuestas en revisión`)}
-    ${tile("truco","Partidos de truco",tr.ms.length,lead?`Puntero: ${esc(lead.k)}`:"Mesa sin abrir")}
+    ${tile("truco","Partidos de truco",tr.ms.length,lead?`Puntero: ${esc(lead.k)}`:torneos().length?`${torneos().length} torneos armados`:"Mesa sin abrir")}
     ${tile("awards","Choice Awards",aw.phase==="hidden"?"🔒":aw.phase==="voting"?voters:"🏆",aw.phase==="hidden"?"Categorías en deliberación":aw.phase==="voting"?"ya votaron":"Resultados revelados")}
     ${tile("cuartos","Cuartos",rc.drawnAt?"✓":"—",rc.drawnAt?"Sorteo realizado":"Sorteo pendiente")}
     ${tile("equipos","Equipos de cocina",tc.drawnAt?tc.count:"—",tc.drawnAt?"equipos sorteados":"Sorteo pendiente")}
@@ -902,6 +978,7 @@ inicio(){
       ${myTeam!=null?`<h3>${esc(tc.names[myTeam]||"Equipo "+(myTeam+1))}</h3><p class="small muted">Te toca: ${esc(myNights.join(", "))}</p>`:`<p class="empty">${tc.drawnAt?"No estás en ningún equipo.":"El sorteo de equipos todavía no se hizo."}</p>`}
       <button class="link" data-tab="equipos">Ver equipos</button></section>`}
     ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span><img class="thumb" src="${esc(topPh.data.thumb||topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}"><span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
+    ${(()=>{const ch=torneos().map(t=>({t,c:champOf(t)})).filter(x=>x.c);return ch.length?`<section class="sheet"><span class="eyebrow">Campeones de truco</span>${ch.slice(-3).reverse().map(({t,c})=>`<p>🏆 <b>${esc(teamName(c))}</b> <span class="muted small">· ${esc(t.name)}</span></p>`).join("")}<button class="link" data-tab="truco">Ver torneos</button></section>`:""})()}
     ${charla?`<section class="sheet"><span class="eyebrow">El más charlatán del muro</span><h3>${esc(charla[0])}</h3><p class="small muted">${charla[1]} publicaciones y comentarios</p><button class="link" data-tab="muro">Ir al muro</button></section>`:""}
   </div>
   <section class="sheet">
@@ -961,42 +1038,24 @@ fotos(){
 },
 
 truco(){
-  const {ind,par,ms}=trucoStats();
-  const tbl=(rows,label)=>`<div class="tscroll"><table><thead><tr><th>#</th><th>${label}</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PP</th><th class="num">% Vic</th><th class="num">Pts</th><th class="num">Dif</th><th class="num">Racha</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr class="${ME&&r.k.split(" & ").includes(ME.name)?"me":""}"><td class="num">${i+1}</td><td>${esc(r.k)}</td><td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pp}</td><td class="num">${pct(r.pg,r.pj)}%</td><td class="num">${r.pf}</td><td class="num">${r.pf-r.pc>0?"+":""}${r.pf-r.pc}</td><td class="num">${r.cur?r.cur+"G":"–"}</td></tr>`).join("")}</tbody></table></div>`;
-  let facts="";
-  if(ms.length){
-    const diff=m=>Math.abs(m.data.s1-m.data.s2); const desc=m=>{const d=m.data;const w=d.s1>d.s2;return `${(w?d.p1:d.p2).join(" & ")} ${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)} a ${(w?d.p2:d.p1).join(" & ")}`};
-    const paliza=ms.slice().sort((a,b)=>diff(b)-diff(a))[0]; const parejo=ms.slice().sort((a,b)=>diff(a)-diff(b))[0];
-    const by=(arr,f)=>arr.slice().sort((a,b)=>f(b)-f(a))[0];
-    const goleador=by(ind,r=>r.pf), vicio=by(ind,r=>r.pj), racha=by(ind,r=>r.best), castigado=by(ind,r=>r.pp);
-    const efic=ind.filter(r=>r.pj>=3).sort((a,b)=>b.pg/b.pj-a.pg/a.pj)[0];
-    const repetida=by(par,r=>r.pj);
-    const f=(l,v,s)=>`<div class="fact"><span class="lbl">${l}</span><b>${esc(v)}</b><span class="small muted">${esc(s)}</span></div>`;
-    facts=`<section class="stack"><h3>Estadísticas del campeonato</h3><div class="facts">
-      ${f("Máxima paliza",paliza.data.p1.concat(paliza.data.p2).length?desc(paliza):"",`Diferencia de ${diff(paliza)} puntos`)}
-      ${ms.length>1?f("El más parejo",desc(parejo),`Se definió por ${diff(parejo)}`):""}
-      ${f("Más puntos a favor",goleador.k,goleador.pf+" puntos en "+goleador.pj+" partidos")}
-      ${f("Mejor racha",racha.k,racha.best+" ganados seguidos")}
-      ${efic?f("Más efectivo (3+ PJ)",efic.k,pct(efic.pg,efic.pj)+"% de victorias"):""}
-      ${f("Vicioso del naipe",vicio.k,vicio.pj+" partidos jugados")}
-      ${castigado.pp?f("El más castigado",castigado.k,castigado.pp+" derrotas"):""}
-      ${f("Pareja más repetida",repetida.k,repetida.pj+" partidos juntos")}
-      ${f("Puntos totales en juego",String(ms.reduce((s,m)=>s+m.data.s1+m.data.s2,0)),ms.length+" partidos")}
-    </div></section>`;
-  }
-  return `<div class="head"><span class="eyebrow">Campeonato Patagónico de Truco</span><h2>Truco</h2><p>Partidos a 30 en parejas que se arman como quieran. Ranking por partidos ganados; desempata la diferencia de puntos.</p></div>
-  <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido</span>
+  const head=`<div class="head"><span class="eyebrow">Campeonato Patagónico de Truco</span><h2>Truco</h2></div>
+  <div class="seg big2"><button data-act="tsub" data-id="partidos" aria-pressed="${TRUCO_SUB==="partidos"}">Partidos y rankings</button><button data-act="tsub" data-id="anotador" aria-pressed="${TRUCO_SUB==="anotador"}">Anotador</button><button data-act="tsub" data-id="torneos" aria-pressed="${TRUCO_SUB==="torneos"}">Torneos</button></div>`;
+  const champs=torneos().map(t=>({t,c:champOf(t)})).filter(x=>x.c);
+  const fame=champs.length?`<section class="sheet official"><span class="eyebrow">Salón de la fama</span>${champs.slice().reverse().map(({t,c})=>`<div class="row between"><span>🏆 <b>${esc(teamName(c))}</b></span><span class="muted small">${esc(t.name)} · de a ${t.mode}</span></div>`).join("")}</section>`:"";
+  if(TRUCO_SUB==="torneos") return head+fame+torneosView();
+  if(TRUCO_SUB==="anotador") return head+anotadorView();
+  const sz=TRUCO_MODE/2, lbl=TRUCO_MODE===4?"Pareja":"Equipo";
+  const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts()}</select>`).join("");
+  return head+`
+  <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido suelto</span>
+    <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4 · 2 parejas</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6 · 3 contra 3</button></div></div>
     <div class="grid2">
-      <div class="stack"><b>Pareja 1</b><div class="fgrid"><select id="t-a1" name="a1" aria-label="Pareja 1, jugador 1">${personOpts()}</select><select id="t-a2" name="a2" aria-label="Pareja 1, jugador 2">${personOpts()}</select></div>
-        <div class="field"><label for="t-s1">Puntos</label><input type="number" id="t-s1" name="s1" min="0" max="40" required></div></div>
-      <div class="stack"><b>Pareja 2</b><div class="fgrid"><select id="t-b1" name="b1" aria-label="Pareja 2, jugador 1">${personOpts()}</select><select id="t-b2" name="b2" aria-label="Pareja 2, jugador 2">${personOpts()}</select></div>
-        <div class="field"><label for="t-s2">Puntos</label><input type="number" id="t-s2" name="s2" min="0" max="40" required></div></div>
-    </div><p class="small muted" id="t-hint">Un jugador no puede estar en las dos parejas.</p><div><button class="btn">Cargar resultado</button></div></form>
-  <section class="stack"><h3>Ranking de parejas</h3>${par.length?tbl(par,"Pareja"):`<p class="empty">Sin partidos todavía.</p>`}</section>
-  <section class="stack"><h3>Ranking individual</h3>${ind.length?tbl(ind,"Jugador"):`<p class="empty">Sin partidos todavía.</p>`}</section>
-  ${facts}
-  ${ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(d.p1.join(" & "))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(d.p2.join(" & "))}</b></span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""}`;
+      <div class="stack"><b>${lbl} 1</b><div class="fgrid">${sideSel("a")}</div><div class="field"><label for="t-s1">Puntos</label><input type="number" id="t-s1" name="s1" min="0" max="40" required></div></div>
+      <div class="stack"><b>${lbl} 2</b><div class="fgrid">${sideSel("b")}</div><div class="field"><label for="t-s2">Puntos</label><input type="number" id="t-s2" name="s2" min="0" max="40" required></div></div>
+    </div><p class="small muted">Un jugador no puede estar en los dos lados.</p><div><button class="btn">Cargar resultado</button></div></form>
+  ${fame}
+  ${[4,6].map(rankBlock).join("")}
+  ${(()=>{const ms=of("truco");return ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;const t=d.tid&&torneos().find(x=>x.id===d.tid);return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(teamName(d.p1))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(teamName(d.p2))}</b> <span class="pill info">de a ${tmode(m)}</span>${t?` <span class="pill warn">${esc(t.name)}</span>`:""}</span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""})()}`;
 },
 
 awards(){
@@ -1291,6 +1350,13 @@ document.addEventListener("click", async ev=>{
     case "tm-reopen": if(SUPER.includes(ME.name)){ await saveTeams({draws:0}); render(); } break;
     case "com-rm": { if(!SUPER.includes(ME.name)) break; const [k,n]=id.split("|"); const cfg=comCfg(); await saveCom({[k]:(cfg[k]||[]).filter(x=>x!==n)}); render(); break; }
     case "more": MORE_OPEN=!MORE_OPEN; renderTabs(); break;
+    case "tsub": TRUCO_SUB=id; render(); break;
+    case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); } break;
+    case "anot-sub": if(ANOT&&ANOT.s[+id]>0){ ANOT.s[+id]--; saveAnot(); render(); } break;
+    case "anot-reset": ARM=null; ANOT=null; saveAnot(); render(); break;
+    case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; await Store.add("truco",{mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
+    case "tmode": TRUCO_MODE=+id; render(); break;
+    case "tf": { const nm=$("#tf-name"); if(nm) TF.name=nm.value; const [k,v]=id.split(":"); TF[k]=k==="format"?v:+v; render(); break; }
     case "replay": playReveal(id); break;
     case "photo": photoModal(id); break;
     case "psort": PHOTO_SORT=id; render(); break;
@@ -1299,12 +1365,60 @@ document.addEventListener("click", async ev=>{
     case "copy": { const t=a.dataset.text; try{ await navigator.clipboard.writeText(t); toast("Copiado: "+t);}catch(e){ const c=a.previousElementSibling; if(c){const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r);} toast("Seleccionado, copialo a mano"); } break; }
   }}catch(e){ console.error(e); toast("No se pudo guardar. Revisá la conexión."); a.disabled=false; }
 });
-function trucoSync(){
-  const ids=["t-a1","t-a2","t-b1","t-b2"]; const sels=ids.map(i=>document.getElementById(i)); if(sels.some(x=>!x)) return;
-  sels.forEach((sel,si)=>{ [...sel.options].forEach(o=>{ if(!o.value) return; const other=sels.findIndex((x,xi)=>xi!==si&&x.value===o.value);
-    o.disabled=other>=0; o.textContent=o.value+(other>=0?(other<2?" (en pareja 1)":" (en pareja 2)"):""); }); });
+function rankBlock(mode){
+  const {ind,par,ms}=trucoStats(mode); const team=mode===4?"Pareja":"Equipo";
+  if(!ms.length) return `<section class="stack"><h3>Ranking de a ${mode}</h3><p class="empty">Sin partidos de a ${mode} todavía.</p></section>`;
+  const tbl=(rows,label)=>`<div class="tscroll"><table><thead><tr><th>#</th><th>${label}</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PP</th><th class="num">% Vic</th><th class="num">Pts</th><th class="num">Dif</th><th class="num">Racha</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${ME&&r.k.split(" & ").includes(ME.name)?"me":""}"><td class="num">${i+1}</td><td>${esc(r.k)}</td><td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pp}</td><td class="num">${pct(r.pg,r.pj)}%</td><td class="num">${r.pf}</td><td class="num">${r.pf-r.pc>0?"+":""}${r.pf-r.pc}</td><td class="num">${r.cur?r.cur+"G":"–"}</td></tr>`).join("")}</tbody></table></div>`;
+  const diff=m=>Math.abs(m.data.s1-m.data.s2); const desc=m=>{const d=m.data;const w=d.s1>d.s2;return `${teamName(w?d.p1:d.p2)} ${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)} a ${teamName(w?d.p2:d.p1)}`};
+  const by=(arr,f)=>arr.slice().sort((a,b)=>f(b)-f(a))[0];
+  const paliza=ms.slice().sort((a,b)=>diff(b)-diff(a))[0], parejo=ms.slice().sort((a,b)=>diff(a)-diff(b))[0];
+  const goleador=by(ind,r=>r.pf), vicio=by(ind,r=>r.pj), racha=by(ind,r=>r.best), castigado=by(ind,r=>r.pp), efic=ind.filter(r=>r.pj>=3).sort((a,b)=>b.pg/b.pj-a.pg/a.pj)[0], repetida=by(par,r=>r.pj);
+  const f=(l,v,s)=>`<div class="fact"><span class="lbl">${l}</span><b>${esc(v)}</b><span class="small muted">${esc(s)}</span></div>`;
+  return `<section class="stack"><h3>Ranking de a ${mode}</h3>
+    <span class="eyebrow">${team==="Pareja"?"Parejas":"Equipos"}</span>${tbl(par,team)}
+    <span class="eyebrow">Individual</span>${tbl(ind,"Jugador")}
+    <div class="facts">
+      ${f("Máxima paliza",desc(paliza),"Diferencia de "+diff(paliza)+" puntos")}
+      ${ms.length>1?f("El más parejo",desc(parejo),"Se definió por "+diff(parejo)):""}
+      ${f("Más puntos a favor",goleador.k,goleador.pf+" puntos en "+goleador.pj+" partidos")}
+      ${f("Mejor racha",racha.k,racha.best+" ganados seguidos")}
+      ${efic?f("Más efectivo (3+ PJ)",efic.k,pct(efic.pg,efic.pj)+"% de victorias"):""}
+      ${f("Vicioso del naipe",vicio.k,vicio.pj+" partidos jugados")}
+      ${castigado.pp?f("El más castigado",castigado.k,castigado.pp+" derrotas"):""}
+      ${f(team==="Pareja"?"Pareja más repetida":"Equipo más repetido",repetida.k,repetida.pj+" partidos juntos")}
+    </div></section>`;
 }
-document.addEventListener("change", ev=>{ if(ev.target.id&&/^t-[ab][12]$/.test(ev.target.id)) trucoSync(); });
+function matchRow(t,mid,a,b,res){
+  const A=t.teams[a], B=t.teams[b]; const canEdit=ME&&(t.item.author===ME.name||SUPER.includes(ME.name)||[...A,...B].includes(ME.name));
+  if(res){ const w=res.data.s1>res.data.s2; return `<div class="match"><span class="${w?"win":""}">${esc(teamName(A))}</span><span class="mono">${res.data.s1}–${res.data.s2}</span><span class="${w?"":"win"}">${esc(teamName(B))}</span>${ME&&(t.item.author===ME.name||SUPER.includes(ME.name))?`<button class="link danger" data-act="del" data-id="${res.id}">borrar</button>`:""}</div>`; }
+  return `<form class="match" data-form="tmatch" data-tid="${t.id}" data-mid="${mid}" data-a="${a}" data-b="${b}"><span>${esc(teamName(A))}</span>${canEdit?`<span class="sc"><input type="number" name="s1" min="0" max="40" required aria-label="Puntos ${esc(teamName(A))}">–<input type="number" name="s2" min="0" max="40" required aria-label="Puntos ${esc(teamName(B))}"></span>`:`<span class="muted small">vs</span>`}<span>${esc(teamName(B))}</span>${canEdit?`<button class="btn sm">OK</button>`:""}</form>`;
+}
+function torneosView(){
+  const ts=torneos().slice().reverse(); const sz=TF.mode/2, lbl=TF.mode===4?"Pareja":"Equipo";
+  const form=`<form class="sheet" data-form="torneo"><span class="eyebrow">Armar torneo</span>
+    <div class="field"><label for="tf-name">Nombre del torneo</label><input type="text" id="tf-name" name="name" value="${esc(TF.name)}" placeholder="Ej: Copa Nahuel Huapi" required maxlength="50"></div>
+    <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tf" data-id="mode:4" aria-pressed="${TF.mode===4}">De a 4</button><button type="button" data-act="tf" data-id="mode:6" aria-pressed="${TF.mode===6}">De a 6</button></div></div>
+    <div class="row"><span class="small">Formato:</span><div class="seg"><button type="button" data-act="tf" data-id="format:liga" aria-pressed="${TF.format==="liga"}">Liga · gana el que más gana</button><button type="button" data-act="tf" data-id="format:mata" aria-pressed="${TF.format==="mata"}">Mata-mata · el que pierde se va</button></div></div>
+    <div class="row"><span class="small">Cantidad de ${lbl.toLowerCase()}s:</span><div class="seg">${[2,3,4,5,6,7,8].map(k=>`<button type="button" data-act="tf" data-id="n:${k}" aria-pressed="${TF.n===k}">${k}</button>`).join("")}</div></div>
+    <div class="grid2">${[...Array(TF.n)].map((_,i)=>`<div class="stack" style="gap:6px"><b>${lbl} ${i+1}</b><div class="fgrid">${[...Array(sz)].map((_,j)=>`<select id="tf-${i}-${j}" name="t${i}_${j}" data-grp="tf" data-team="${i}" aria-label="${lbl} ${i+1}, jugador ${j+1}">${personOpts()}</select>`).join("")}</div></div>`).join("")}</div>
+    <p class="small muted">${TF.format==="liga"?`Juegan todos contra todos (${TF.n*(TF.n-1)/2} partidos). Campeón: el que más partidos gana; desempata la diferencia de puntos.`:`Llaves sorteadas al crear. El que pierde queda afuera; si no son 2, 4 u 8, algunos pasan directo a la segunda ronda.`}</p>
+    <div><button class="btn">Crear torneo</button></div></form>`;
+  const cards=ts.map(t=>{ const isL=t.format==="liga"; const champ=champOf(t); const canDelT=ME&&(t.item.author===ME.name||SUPER.includes(ME.name));
+    let body;
+    if(isL){ const L=ligaTable(t); body=`<div class="tscroll"><table><thead><tr><th>#</th><th>${t.mode===4?"Pareja":"Equipo"}</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PP</th><th class="num">Dif</th></tr></thead><tbody>${L.table.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.k)}</td><td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pp}</td><td class="num">${r.pf-r.pc>0?"+":""}${r.pf-r.pc}</td></tr>`).join("")}</tbody></table></div>
+      <span class="eyebrow">Partidos · ${L.fixtures.filter(x=>x.r).length} de ${L.fixtures.length} jugados</span>${L.fixtures.map(x=>matchRow(t,x.mid,x.a,x.b,x.r)).join("")}`; }
+    else { const B=bracket(t); body=B.rounds.map((ms,ri)=>`<span class="eyebrow">${roundName(ms.length,B.rounds.length,ri)}</span>${ms.map(m=>m.bye?(m.a==="BYE"&&m.b==="BYE"?"":`<div class="match muted small"><span>${esc(teamName(t.teams[m.w]))}</span><span>pasa directo</span><span></span></div>`):(m.a==null||m.b==null)?`<div class="match muted small"><span>${m.a!=null?esc(teamName(t.teams[m.a])):"A definir"}</span><span>vs</span><span>${m.b!=null?esc(teamName(t.teams[m.b])):"A definir"}</span></div>`:matchRow(t,m.mid,m.a,m.b,m.res)).join("")}`).join(""); }
+    return `<section class="sheet ${champ?"official":""}"><div class="row between"><div><span class="eyebrow">${isL?"Liga":"Mata-mata"} · de a ${t.mode} · creado por ${esc(t.item.author)}</span><h3>${esc(t.name)}</h3></div>${canDelT?`<button class="link danger" data-act="del" data-id="${t.id}">borrar torneo</button>`:""}</div>
+      ${champ?`<div class="champ">🏆 Campeón: <b>${esc(teamName(champ))}</b></div>`:`<span class="pill info">En juego</span>`}${body}</section>`; }).join("");
+  return form+(cards||`<p class="empty">Todavía no hay torneos. Armá el primero.</p>`);
+}
+function trucoSync(){
+  ["t","tf"].forEach(g=>{ const sels=[...document.querySelectorAll(`select[data-grp="${g}"]`)]; if(!sels.length) return; const lbl=g==="t"?(TRUCO_MODE===4?"pareja":"equipo"):(TF.mode===4?"pareja":"equipo");
+    sels.forEach(sel=>{ [...sel.options].forEach(o=>{ if(!o.value) return; const other=sels.find(x=>x!==sel&&x.value===o.value);
+      o.disabled=!!other; o.textContent=o.value+(other?` (en ${lbl} ${+other.dataset.team+1})`:""); }); }); });
+}
+document.addEventListener("change", ev=>{ if(ev.target.dataset&&ev.target.dataset.grp) trucoSync(); });
 document.addEventListener("change", async ev=>{
   const s=ev.target.closest("[data-vote]"); if(!s) return; if(!needMe()) return;
   try{ const prev=myVote(s.dataset.vote); if(prev) await Store.remove(prev.id); if(s.value) await Store.add("vote",{cat:s.dataset.vote,nominee:s.value}); toast(s.value?"Voto registrado":"Voto retirado"); render(); }catch(e){ toast("No se pudo votar"); }
@@ -1323,11 +1437,22 @@ document.addEventListener("submit", async ev=>{
       case "comunicado": { if(!C("comunicado")) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
       case "event": { const ok=C("cronograma"); const st=ok?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:ok?ME.name:undefined});
         notify(ok?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(ok?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
-      case "truco": {
-        const p1=[d.a1,d.a2], p2=[d.b1,d.b2]; const all=[...p1,...p2];
-        if(all.some(x=>!x)||new Set(all).size<4){ toast("Elegí 4 jugadores distintos"); break; }
+      case "truco": { const sz=TRUCO_MODE/2;
+        const p1=[...Array(sz)].map((_,j)=>d["a"+(j+1)]), p2=[...Array(sz)].map((_,j)=>d["b"+(j+1)]); const all=[...p1,...p2];
+        if(all.some(x=>!x)||new Set(all).size<TRUCO_MODE){ toast(`Elegí ${TRUCO_MODE} jugadores distintos`); break; }
         const s1=+d.s1, s2=+d.s2; if(s1===s2){ toast("En el truco no hay empate"); break; }
-        await Store.add("truco",{p1,p2,s1,s2}); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
+        await Store.add("truco",{mode:TRUCO_MODE,p1,p2,s1,s2}); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
+      case "anot-start": { const sz=TRUCO_MODE/2; const p=["a","b"].map(x=>[...Array(sz)].map((_,j)=>d[x+(j+1)]||""));
+        const all=p.flat().filter(Boolean); if(new Set(all).size<all.length){ toast("Hay un jugador repetido"); break; }
+        ANOT={mode:TRUCO_MODE,p,s:[0,0]}; saveAnot(); break; }
+      case "torneo": { const sz=TF.mode/2; const teams=[...Array(TF.n)].map((_,i)=>[...Array(sz)].map((_,j)=>d[`t${i}_${j}`]));
+        const all=teams.flat(); if(all.some(x=>!x)){ toast("Completá todos los jugadores"); break; } if(new Set(all).size<all.length){ toast("Hay un jugador repetido"); break; }
+        const name=(d.name||"").trim()||"Torneo"; await Store.add("torneo",{name,mode:TF.mode,format:TF.format,teams,order:shuffle([...teams.keys()])});
+        notify("🃏 Nuevo torneo de truco: "+name,(TF.format==="liga"?"Liga":"Mata-mata")+" de a "+TF.mode+" · "+TF.n+(TF.mode===4?" parejas":" equipos")); TF={...TF,name:""}; toast("Torneo creado"); break; }
+      case "tmatch": { const t=torneos().find(x=>x.id===f.dataset.tid); if(!t) break; const a=+f.dataset.a, b=+f.dataset.b; const s1=+d.s1, s2=+d.s2; if(s1===s2){ toast("En el truco no hay empate"); break; }
+        if(tResult(t.id,f.dataset.mid)) break; const before=champOf(t);
+        await Store.add("truco",{mode:t.mode,p1:t.teams[a],p2:t.teams[b],s1,s2,tid:t.id,mid:f.dataset.mid});
+        const after=champOf(torneos().find(x=>x.id===t.id)); if(!before&&after){ notify("🏆 Campeón del torneo "+t.name,teamName(after)); toast("¡Tenemos campeón!"); } break; }
       case "vuelo": { const fx={iv:d.iv||null,is:d.is||null,il:d.il||null,vv:d.vv||null,vs:d.vs||null,vl:d.vl||null}; await Store.add("vuelo",{person:ME.name,f:fx}); toast("Vuelo actualizado"); break; }
       case "pago": if(!isIn("economica",ME.name)) break; await Store.add("pago",{person:d.person,concept:d.concept,amount:+d.amount}); toast("Pago registrado"); break;
       case "place": await Store.add("place",{name:d.name.trim(),note:d.note.trim()}); break;
