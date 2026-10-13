@@ -280,6 +280,16 @@ tr.me td{background:var(--lake-soft)}
 .thumb{width:100%;aspect-ratio:4/3;max-width:100%;object-fit:cover;border-radius:4px;display:block;background:var(--line)}
 .tab{position:relative}
 .tab .dot{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;margin-left:5px;border-radius:999px;background:var(--stamp);color:#fff;font-size:.62rem;letter-spacing:0;vertical-align:1px}
+.likebar{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.likebtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:2px 10px;cursor:pointer;font-size:.82rem;line-height:1.5}
+.likebtn.on{border-color:var(--stamp);background:var(--stamp-soft)}
+.likebtn b{font-family:var(--f-mono);font-weight:600}
+.wxnow{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.wxnow>.e{font-size:2.6rem;line-height:1}
+@media (max-width:480px){.wxnow{grid-template-columns:auto 1fr}.wxnow .btn{grid-column:1/-1;justify-self:start}}
+.wxscroll{overflow-x:auto;margin-inline:-4px;padding:4px}
+.wxscroll .wx{display:grid;grid-auto-flow:column;grid-auto-columns:84px;grid-template-columns:none}
+.wx div.trip{border:2px solid var(--gold);background:var(--gold-soft)}
 
 /* ---- Identidad oficial PIBEX 2026: azul marino + crema del escudo, ámbar cervecero como acento ---- */
 :root{
@@ -370,7 +380,7 @@ h3{font-weight:700}
     <h1>PIBEX 2026<span>BARILOCHE</span></h1>
   </div>
   <p class="verse">Siete días en el sur, la montaña, el lago, el sol… y nosotros, en la mesa, con el truco y el alcohol.</p>
-  <div class="mast-tools"><button class="iconbtn" data-act="notif">📲 Instalar</button><button class="iconbtn" data-act="login" id="mebtn">Entrar</button></div>
+  <div class="mast-tools"><button class="iconbtn" data-act="notif" id="bell">🔕 Activar avisos</button><button class="iconbtn" data-act="login" id="mebtn">Entrar</button></div>
 </div></header>
 <nav class="tabs" aria-label="Secciones"><div class="tabs-box"><button class="tabarrow l" id="tl" data-act="tl" aria-label="Secciones anteriores">‹</button><div class="tabs-in" id="tabs"></div><button class="tabarrow r" id="tr" data-act="tr" aria-label="Más secciones">›</button></div></nav>
 <div class="wrap"><main id="main"></main>
@@ -383,7 +393,9 @@ h3{font-weight:700}
 const CONFIG = {
   SUPABASE_URL: "https://qwzgqxzfvldhsenjgbaw.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emdxeHpmdmxkaHNlbmpnYmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTczMjAsImV4cCI6MjEwNzQ3MzMyMH0.VEc-4oKOFXbt_yB2HHyfYeVee5Rtxgt-0jkrWzJ13M4",
-  MANSION: "San Carlos de Bariloche"
+  MANSION: "San Carlos de Bariloche",
+  VAPID_PUBLIC: "BFvl5FRxltZ4uRVtaTOu8Y5v9SVWxTV8Gsg_21EbJ7e-TFMXH9VV5HKvYxcoeq6LV3SZ3auVwBVOXZyZD4phcs0",   // clave pública para avisos push
+  ACCUWEATHER: "https://www.accuweather.com/es/ar/san-carlos-de-bariloche/5857/weather-forecast/5857"
 };
 
 /* ================= Datos base ================= */
@@ -588,7 +600,30 @@ let ME = lsGet("pibex_me2");
 function emojiOf(n){ return PERFILES[n] || ""; }
 const av = n=>`<span class="av" title="${esc(n)}">${esc(PERFILES[n]||n.slice(0,1).toUpperCase())}</span>`;
 
-function notify(){ /* sin avisos externos: las novedades se marcan dentro de la web */ }
+function notify(title,body){
+  if(!ONLINE||!sb||!ME) return;
+  try{ sb.functions.invoke("notify",{body:{title:String(title).slice(0,80),body:String(body||"").slice(0,200),author:ME.name,url:location.href.split("#")[0]+"#"+TAB}}).catch(()=>{}); }catch(e){}
+}
+
+/* ---- Avisos push ---- */
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
+const PUSH_OK = ONLINE && !!CONFIG.VAPID_PUBLIC && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let PUSH_ON = false;
+function b64u(str){ const p="=".repeat((4-str.length%4)%4); const b=atob((str+p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from([...b].map(c=>c.charCodeAt(0))); }
+async function pushSub(){ if(!PUSH_OK) return null; const reg=await navigator.serviceWorker.getRegistration(); return reg? await reg.pushManager.getSubscription() : null; }
+async function pushRefresh(){ try{ PUSH_ON = !!(await pushSub()) && Notification.permission==="granted"; }catch(e){ PUSH_ON=false; } paintBell(); }
+function paintBell(){ const b=$("#bell"); if(b) b.innerHTML = PUSH_ON ? "🔔 Avisos activados" : "🔕 Activar avisos"; }
+async function pushEnable(){
+  const reg=await navigator.serviceWorker.register("sw.js"); await navigator.serviceWorker.ready;
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted"){ toast("No diste permiso. Se habilita desde los ajustes del navegador."); return false; }
+  const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(CONFIG.VAPID_PUBLIC)});
+  const {error}=await sb.rpc("pibex_push_sub",{p_sub:sub.toJSON(),p_name:ME?ME.name:null}); if(error) throw error;
+  PUSH_ON=true; paintBell(); return true;
+}
+async function pushDisable(){ const sub=await pushSub(); if(sub){ try{ await sb.rpc("pibex_push_unsub",{p_endpoint:sub.endpoint}); }catch(e){} await sub.unsubscribe(); } PUSH_ON=false; paintBell(); }
+async function pushTest(){ const sub=await pushSub(); if(!sub) return; const {data,error}=await sb.functions.invoke("notify",{body:{title:"PIBEX 2026",body:"Así te van a llegar los avisos. ¡Salud!",test_endpoint:sub.endpoint,url:location.href.split("#")[0]}}); if(error) throw error; toast(data&&data.sent?"Aviso enviado: mirá el celu":"No se pudo enviar el aviso de prueba"); }
 
 /* ---- Novedades desde tu última visita ---- */
 const SEEN_PREV = lsGet("pibex_seen") || Date.now();
@@ -605,7 +640,7 @@ function markSeen(tab){ TAB_SEEN[tab]=Date.now(); lsSet("pibex_seen_tabs",TAB_SE
 /* ================= Router ================= */
 const TABS=[["inicio","Inicio"],["comunicados","Comunicados"],["cronograma","Cronograma"],["muro","Muro"],["fotos","Fotos"],["truco","Truco"],["awards","Choice Awards"],["cuartos","Cuartos"],["vuelos","Vuelos"],["plata","Plata"],["lugares","Lugares"],["comisiones","Comisiones"]];
 let TAB = (location.hash||"").slice(1); if(!TABS.some(t=>t[0]===TAB)) TAB="inicio";
-const OPEN = new Set(); let PENDING=false, ARM=null, PHOTO_SORT="new", REVEAL=null;
+const OPEN = new Set(); let EDIT=null; let PENDING=false, ARM=null, PHOTO_SORT="new", REVEAL=null;
 
 function renderTabs(){
   $("#tabs").innerHTML = TABS.map(([id,l])=>{const n=id===TAB?0:newCount(id);return `<button class="tab" data-tab="${id}" ${id===TAB?'aria-current="page"':""}>${l}${n?`<span class="dot" aria-label="${n} novedades">${n}</span>`:""}</button>`}).join("");
@@ -634,11 +669,21 @@ function liveRefresh(){
 /* ================= Componentes ================= */
 const canDel = it => ME && (it.author===ME.name || isOrg(ME.name));
 const delBtn = it => canDel(it) ? `<button class="link danger" data-act="del" data-id="${it.id}">borrar</button>`:"";
+function likeBar(id){
+  const ls=likes(id); const yo=ME&&ls.find(l=>l.author===ME.name);
+  const names=ls.map(l=>l.author); const who=names.length>3?names.slice(0,3).join(", ")+" y "+(names.length-3)+" más":names.join(", ");
+  return `<span class="likebar"><button class="likebtn ${yo?"on":""}" data-act="clike" data-id="${id}" aria-pressed="${!!yo}" aria-label="Me gusta">${yo?"❤️":"🤍"}${ls.length?` <b>${ls.length}</b>`:""}</button>${ls.length?`<span class="muted small" title="${esc(names.join(", "))}">${esc(who)}</span>`:""}</span>`;
+}
+function msgText(it,cls){
+  if(EDIT===it.id) return `<form class="stack" data-form="edit" data-id="${it.id}" style="gap:6px"><textarea id="ed-${it.id}" name="text" required maxlength="2000">${esc(it.data.text)}</textarea><div class="row"><button class="btn sm">Guardar</button><button type="button" class="btn ghost sm" data-act="edit-cancel">Cancelar</button></div></form>`;
+  return `<div class="${cls}">${esc(it.data.text)}${it.data.edited?` <span class="muted small">(editado)</span>`:""}</div>`;
+}
+const editBtn = it => ME&&it.author===ME.name&&EDIT!==it.id ? `<button class="link" data-act="edit" data-id="${it.id}">editar</button>`:"";
 function thread(ref,label="comentarios"){
   const cs = refs("comment",ref); const open = OPEN.has(ref) || cs.length<=2;
   return `<div class="thread">
     ${cs.length>2 && !OPEN.has(ref) ? `<button class="link" data-act="open" data-id="${ref}">Ver los ${cs.length} ${label}</button>`:""}
-    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${delBtn(c)}</div><div class="txt">${esc(c.data.text)}</div></div></div>`).join(""):""}
+    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div class="stack" style="gap:2px"><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${editBtn(c)}${delBtn(c)}</div>${msgText(c,"txt")}${likeBar(c.id)}</div></div>`).join(""):""}
     <form class="cform" data-form="comment" data-ref="${ref}"><input type="text" id="c-${ref}" name="text" placeholder="Comentar…" autocomplete="off" required maxlength="500"><button class="btn sm">Enviar</button></form>
   </div>`;
 }
@@ -708,21 +753,24 @@ const likes = id => refs("like",id);
 let WX=null, WX_LOADING=false;
 const WMO=c=>c===0?["☀️","Despejado"]:c<=2?["🌤️","Algo nublado"]:c===3?["☁️","Nublado"]:c<=48?["🌫️","Niebla"]:c<=57?["🌦️","Llovizna"]:c<=67?["🌧️","Lluvia"]:c<=77?["🌨️","Nieve"]:c<=82?["🌦️","Chaparrones"]:c<=86?["❄️","Nieve"]:["⛈️","Tormenta"];
 async function loadWeather(){
-  if(WX||WX_LOADING) return; WX_LOADING=true;
-  const today=new Date(); const max=new Date(today.getTime()+15*86400000);
-  const start=new Date(Math.max(today, new Date("2026-10-24T12:00:00-03:00"))); const end=new Date(Math.min(max, new Date("2026-10-31T12:00:00-03:00")));
-  if(start>end){ WX={none:true}; paintWeather(); return; }
-  const f=d=>d.toISOString().slice(0,10);
+  if(WX){ paintWeather(); return; } if(WX_LOADING) return; WX_LOADING=true;
   try{
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=-41.13&longitude=-71.31&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FArgentina%2FBuenos_Aires&start_date=${f(start)}&end_date=${f(end)}`);
-    const j=await r.json(); if(!j.daily) throw 0; WX=j.daily;
-  }catch(e){ WX={none:true,err:true}; }
-  paintWeather();
+    const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=-41.13&longitude=-71.31&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=America%2FArgentina%2FBuenos_Aires&forecast_days=16");
+    const j=await r.json(); if(!j.daily) throw 0; WX=j;
+  }catch(e){ WX={err:true}; }
+  WX_LOADING=false; paintWeather();
 }
 function paintWeather(){
   const el=$("#wx"); if(!el||!WX) return;
-  if(WX.none){ el.innerHTML=`<p class="muted small">${WX.err?"El pronóstico no se pudo cargar.":"El pronóstico de Bariloche aparece acá a partir del 15/10 (16 días antes)."}</p>`; return; }
-  el.innerHTML=`<div class="wx">${WX.time.map((d,i)=>{const [e,t]=WMO(WX.weather_code[i]);return `<div title="${t}"><b>${esc(dayLabel(d).split(" ")[0].slice(0,3))} ${d.slice(8)}</b><span class="e">${e}</span><span class="tmp">${Math.round(WX.temperature_2m_max[i])}° / ${Math.round(WX.temperature_2m_min[i])}°</span><span class="muted">💧${WX.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div>`;
+  const link=`<a class="btn ghost sm" href="${esc(CONFIG.ACCUWEATHER)}" target="_blank" rel="noopener">Ver en AccuWeather ↗</a>`;
+  if(WX.err){ el.innerHTML=`<div class="row between"><p class="muted small">No se pudo cargar el clima.</p>${link}</div>`; return; }
+  const c=WX.current, d=WX.daily; const [e,t]=WMO(c.weather_code);
+  const tripDays=d.time.filter(x=>x>="2026-10-24"&&x<="2026-10-31");
+  const shown=d.time.map((x,i)=>i).filter(i=>i<7 || (d.time[i]>="2026-10-24"&&d.time[i]<="2026-10-31"));
+  const short=x=>{const dt=new Date(x+"T12:00:00-03:00");return ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][dt.getDay()]+" "+x.slice(8)};
+  el.innerHTML=`<div class="wxnow"><span class="e">${e}</span><div><div class="big">${Math.round(c.temperature_2m)}°</div><div class="small">${t} · sensación ${Math.round(c.apparent_temperature)}°</div><div class="muted small">Viento ${Math.round(c.wind_speed_10m)} km/h · humedad ${c.relative_humidity_2m}%</div></div>${link}</div>
+  <div class="wxscroll"><div class="wx">${shown.map(i=>{const [ee,tt]=WMO(d.weather_code[i]);const trip=d.time[i]>="2026-10-24";return `<div class="${trip?"trip":""}" title="${tt}"><b>${short(d.time[i])}</b><span class="e">${ee}</span><span class="tmp">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</span><span class="muted">💧${d.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div></div>
+  <p class="muted small">${tripDays.length?`Recuadrados: días del viaje con pronóstico (${tripDays.length} de 8). El resto aparece a medida que se acerca la fecha.`:"Los días del viaje aparecen recuadrados a partir del 15/10."} Fuente: Open-Meteo.</p>`;
 }
 
 /* ================= Vistas ================= */
@@ -750,7 +798,7 @@ inicio(){
   <section class="sheet official">
     <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
     <div class="count" id="countdown">${countdownHTML()}</div>
-    <span class="eyebrow">Pronóstico Bariloche</span>
+    <span class="eyebrow">Clima en Bariloche</span>
     <div id="wx"><p class="muted small">Cargando pronóstico…</p></div>
   </section>
   <div class="tiles">
@@ -779,7 +827,7 @@ inicio(){
     ${charla?`<section class="sheet"><span class="eyebrow">El más charlatán del muro</span><h3>${esc(charla[0])}</h3><p class="small muted">${charla[1]} publicaciones y comentarios</p><button class="link" data-tab="muro">Ir al muro</button></section>`:""}
   </div>
   <section class="sheet">
-    <div class="row between"><span class="eyebrow">${nuevos.length?`${nuevos.length} novedades desde tu última visita`:"Movimiento reciente"}</span><button class="iconbtn" data-act="notif">📲 Instalar en el celu</button></div>
+    <div class="row between"><span class="eyebrow">${nuevos.length?`${nuevos.length} novedades desde tu última visita`:"Movimiento reciente"}</span><button class="iconbtn" data-act="notif">🔔 Avisos al celu</button></div>
     ${feed.length?`<div class="feed">${feed.map(i=>`<div class="it">${av(i.author)}<span><b>${esc(i.author)}</b> ${feedKinds[i.kind]}${i.data.text||i.data.title?`: <span class="muted">${esc((i.data.text||i.data.title).slice(0,70))}</span>`:""}</span><span class="muted small">${ago(i.created_at)}</span></div>`).join("")}</div>`:`<p class="empty">Acá aparece todo lo que se publica.</p>`}
   </section>`;
 },
@@ -792,7 +840,7 @@ comunicados(){
     <div class="field"><label for="com-b">Texto</label><textarea id="com-b" name="body" rows="8" required placeholder="Usá ## para subtítulos y - para listas"></textarea></div>
     <div><button class="btn">Emitir y avisar a todos</button></div></form>`:""}
   ${list.map(c=>`<article class="sheet official doc" id="${c.id}">
-    <div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:4px"><span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span><h3>${esc(c.data.title)}</h3></div></div>
+    <span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span><h3>${esc(c.data.title)}</h3>
     <div class="body">${docBody(c.data.body)}</div>
     <p class="sign">${c.author!=="Comisión"&&isIn("economica",c.author)?"Comisión Organizativa Económica":"Comisión Organizativa Creativa Barilochense"}${c.author!=="Comisión"?` · firmado por ${esc(c.author)}`:""} ${c.id.startsWith("seed")?"":delBtn(c)}</p>
     ${thread(c.id)}</article>`).join("")}`;
@@ -820,7 +868,7 @@ muro(){
   const posts=of("post").slice().reverse();
   return `<div class="head"><span class="eyebrow">Foro general</span><h2>El Muro</h2><p>Ideas, preguntas, chicanas, todo. Cada publicación avisa al celular de los que activaron los avisos.</p></div>
   <form class="sheet" data-form="post"><div class="field"><label for="post-t">Publicar</label><textarea id="post-t" name="text" required maxlength="2000" placeholder="¿Quién lleva el parlante?"></textarea></div><div><button class="btn">Publicar</button></div></form>
-  ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${delBtn(p)}</div><div class="txt">${esc(p.data.text)}</div>${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
+  ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${editBtn(p)}${delBtn(p)}</div>${msgText(p,"txt")}${likeBar(p.id)}${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
 },
 
 fotos(){
@@ -1030,7 +1078,7 @@ function loginModal(){ pickName=ME?ME.name:null; pickEmoji=null; paintLogin(); }
 function paintLogin(){
   const claimed=!!(pickName&&PERFILES[pickName]);
   const taken=new Set(Object.entries(PERFILES).filter(([n])=>n!==pickName).map(([,e])=>e));
-  modal(`<div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:2px"><span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>¿Quién sos?</h3></div></div>
+  modal(`<span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>¿Quién sos?</h3>
     <p class="muted small">Cada nombre se reclama una sola vez con un PIN de 4 números. Después nadie más puede entrar como vos. 🔒 = ya reclamado.</p>
     <div class="chips">${PEOPLE.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${PERFILES[p]?esc(PERFILES[p])+" ":""}${esc(p)}${PERFILES[p]?'<span class="lock">🔒</span>':""}</button>`).join("")}</div>
     ${pickName?(claimed?`
@@ -1045,12 +1093,16 @@ function paintLogin(){
     <p class="small" id="lg-err" style="color:var(--stamp)"></p>`);
 }
 function notifModal(){
-  modal(`<span class="eyebrow">Tenela como app</span><h3>Agregá PIBEX a tu pantalla de inicio</h3>
-    <p class="muted small">Queda con ícono propio y se abre a pantalla completa, como una app. Sin bajar nada de ningún store.</p>
-    <div class="stack"><b>iPhone (Safari)</b><ol style="margin:0;padding-left:18px"><li>Tocá el botón Compartir (el cuadrado con la flecha).</li><li>Elegí «Agregar a inicio».</li></ol></div>
-    <div class="stack"><b>Android (Chrome)</b><ol style="margin:0;padding-left:18px"><li>Tocá los tres puntitos de arriba a la derecha.</li><li>Elegí «Agregar a pantalla principal» o «Instalar app».</li></ol></div>
-    <p class="muted small">Lo nuevo desde tu última visita aparece con un número rojo en cada pestaña.</p>
-    <div><button class="btn" data-act="close">Listo</button></div>`);
+  let body;
+  if(!ONLINE) body=`<p class="muted">En esta vista previa los avisos están apagados. En la web real te llega una notificación al celu cada vez que hay movimiento.</p>`;
+  else if(IS_IOS && !STANDALONE) body=`<p>En iPhone, Apple solo deja mandar avisos si la web está en tu pantalla de inicio. Es una sola vez:</p>
+    <ol style="margin:0;padding-left:18px" class="stack"><li>En Safari, tocá Compartir (el cuadrado con la flecha).</li><li>Elegí <b>Agregar a inicio</b>.</li><li>Abrí PIBEX desde ese ícono y volvé a tocar <b>Activar avisos</b>.</li></ol>`;
+  else if(!PUSH_OK) body=`<p class="muted">Este navegador no soporta avisos. Probá desde Chrome en Android o desde Safari en iPhone.</p>`;
+  else if(PUSH_ON) body=`<p><span class="pill ok">Activados</span> Te llega un aviso cuando alguien publica, comenta, propone un plan, sube fotos, carga un truco, sale un comunicado o se sortean los cuartos. Lo tuyo no te avisa.</p>
+    <div class="row"><button class="btn sm" data-act="push-test">Mandarme un aviso de prueba</button><button class="btn ghost sm" data-act="push-off">Desactivar</button></div>`;
+  else body=`<p>Recibí una notificación en el celu cada vez que hay movimiento en la web, aunque la tengas cerrada.</p>
+    <div><button class="btn" data-act="push-on">Activar avisos</button></div><p class="muted small">El celu te va a pedir permiso: tocá «Permitir».</p>`;
+  modal(`<span class="eyebrow">Avisos al celular</span><h3>Enterate de todo</h3>${body}<div><button class="btn ghost" data-act="close">Cerrar</button></div>`);
 }
 function photoModal(id){
   const p=ITEMS.find(i=>i.id===id); if(!p) return; const ls=likes(id); const yo=ME&&ls.find(l=>l.author===ME.name);
@@ -1097,7 +1149,13 @@ document.addEventListener("click", async ev=>{
     case "tr": $("#tabs").scrollBy({left:220,behavior:"smooth"}); break;
     case "login": loginModal(); break;
     case "logout": ME=null; lsSet("pibex_me2",null); closeModal(); render(); loginModal(); break;
-    case "notif": notifModal(); break;
+    case "notif": await pushRefresh(); notifModal(); break;
+    case "push-on": if(!needMe())return; a.disabled=true; if(await pushEnable()){ toast("Avisos activados"); notifModal(); } else a.disabled=false; break;
+    case "push-off": await pushDisable(); toast("Avisos desactivados"); notifModal(); break;
+    case "push-test": a.disabled=true; await pushTest(); a.disabled=false; break;
+    case "clike": { if(!needMe())return; const yo=likes(id).find(l=>l.author===ME.name); if(yo) await Store.remove(yo.id); else await Store.add("like",{ref:id}); render(); break; }
+    case "edit": EDIT=id; render(); setTimeout(()=>{const t=$("#ed-"+id); if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}},30); break;
+    case "edit-cancel": EDIT=null; render(); break;
     case "close": closeModal(); break;
     case "refresh": render(); break;
     case "login-ok": {
@@ -1116,7 +1174,8 @@ document.addEventListener("click", async ev=>{
         if(r==="taken"){ err.textContent="Alguien reclamó ese nombre recién. Si no fuiste vos, avisale a la organización."; await Auth.list(); paintLogin(); return; }
         if(r==="emoji"){ err.textContent="Ese escudo ya lo tiene otro."; await Auth.list(); a.disabled=false; return; }
       }
-      await Auth.list(); ME={name:pickName}; lsSet("pibex_me2",ME); closeModal(); render(); toast("Adentro, "+ME.name); break; }
+      await Auth.list(); ME={name:pickName}; lsSet("pibex_me2",ME);
+      try{ const sub=await pushSub(); if(sub) await sb.rpc("pibex_push_sub",{p_sub:sub.toJSON(),p_name:ME.name}); }catch(e){} closeModal(); render(); toast("Adentro, "+ME.name); break; }
     case "open": OPEN.add(id); render(); break;
     case "toggle": OPEN.has("ev"+id)?OPEN.delete("ev"+id):OPEN.add("ev"+id); render(); break;
     case "del": if(ARM!==id){ ARM=id; a.textContent="¿seguro? tocá de nuevo"; return; } ARM=null; await Store.remove(id); closeModal(); render(); toast("Borrado"); break;
@@ -1156,6 +1215,7 @@ document.addEventListener("submit", async ev=>{
   const org=isOrg(ME.name);
   try{
     switch(kind){
+      case "edit": { const it=ITEMS.find(i=>i.id===f.dataset.id); if(!it||it.author!==ME.name) break; const t=d.text.trim(); if(t&&t!==it.data.text) await Store.update(it.id,{text:t,edited:new Date().toISOString()}); EDIT=null; break; }
       case "comment": { const ref=f.dataset.ref; await Store.add("comment",{ref,text:d.text.trim()}); OPEN.add(ref); notify("💬 "+ME.name+" comentó",d.text); break; }
       case "post": await Store.add("post",{text:d.text.trim()}); notify("📢 "+ME.name+" en el Muro",d.text); break;
       case "comunicado": { if(!org) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
@@ -1197,6 +1257,7 @@ window.addEventListener("hashchange",()=>{const t=location.hash.slice(1); if(TAB
   try{ await Store.init(); }catch(e){ console.error(e); toast("No se pudo conectar con la base de datos"); }
   if(ME && !PERFILES[ME.name] && !AUTH_ERR){ ME=null; }
   render();
+  pushRefresh();
   if(!ME && !AUTH_ERR) loginModal();
 })();
 
