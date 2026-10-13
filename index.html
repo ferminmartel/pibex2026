@@ -400,6 +400,21 @@ h3{font-weight:700}
 .foot p{font-family:var(--f-verse);font-style:italic}
 .foot span{font-family:var(--f-display);font-weight:700;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase}
 
+/* ---- Menú corto + Ver más (sin scroll lateral) ---- */
+.tabs-in{flex-wrap:wrap;overflow:visible;padding-inline:0;row-gap:0;column-gap:2px}
+.tabarrow{display:none}
+.tab.more{color:#E9B65C}
+.tab.more.in{color:var(--cream);border-bottom-color:#E9B65C}
+#morepanel{max-width:860px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px;padding:6px 0 12px;border-top:1px solid rgba(251,245,228,.15)}
+#morepanel[hidden]{display:none}
+#morepanel .tab{text-align:left;border-bottom:0;border-left:3px solid transparent;padding:10px 12px}
+#morepanel .tab[aria-current="page"]{border-left-color:#E9B65C;background:var(--brand-2)}
+@media (max-width:560px){ .tab{font-size:.66rem;letter-spacing:.08em;padding:10px 7px 8px} }
+.sheetframe{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
+.sheetframe iframe{display:block;width:100%;height:72vh;border:0}
+.rooms .name.hid{visibility:hidden}
+button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
+
 </style>
 
 <header class="mast"><div class="mast-in">
@@ -411,7 +426,7 @@ h3{font-weight:700}
   <p class="verse">Siete días en el sur, la montaña, el lago, el sol… y nosotros, en la mesa, con el truco y el alcohol.</p>
   <div class="mast-tools"><button class="iconbtn" data-act="notif" id="bell">🔕 Activar avisos</button><button class="iconbtn" data-act="login" id="mebtn">Entrar</button></div>
 </div></header>
-<nav class="tabs" aria-label="Secciones"><div class="tabs-box"><button class="tabarrow l" id="tl" data-act="tl" aria-label="Secciones anteriores">‹</button><div class="tabs-in" id="tabs"></div><button class="tabarrow r" id="tr" data-act="tr" aria-label="Más secciones">›</button></div></nav>
+<nav class="tabs" aria-label="Secciones"><div class="tabs-box"><div class="tabs-in" id="tabs"></div><div id="morepanel" hidden></div></div></nav>
 <div class="wrap"><main id="main"></main>
 <footer class="foot"><img src="logo.png" alt="" width="44" height="44"><p>¡Salud, amigos!</p><span>Comisión Organizativa Creativa Barilochense</span></footer></div>
 <div id="overlay"></div>
@@ -429,18 +444,25 @@ const CONFIG = {
 };
 
 /* ================= Datos base ================= */
-const PEOPLE = ["Ballve","Bambi","Bola","Bomo","Cabecha","Camello","Chori","Cochi","El Parce","EL WIZZARAP","Fermín","gigilo","Juan","Minus","Negro B","Negro Pablo","Pedri FQ","Pino","Pololo","Ramiro","Samu","Taio"];
-const COM = {
-  creativa: {name:"Comisión Directiva Organizativa Creativa", members:["Taio","Fermín","Cabecha","Pololo"],
-    mandate:"Emite comunicados oficiales, custodia el Programa de las Sorpresas, define la agenda cultural y conduce los Choice Awards."},
-  economica: {name:"Comisión Organizativa Económica y de Gestión de Recursos y Dinámicas", members:["Chori","Ballve"],
-    mandate:"Administra el Fondo, persigue deudores con cariño, registra pagos y co-firma las resoluciones de la organización."},
-  green: {name:"Gestión Green Team", members:["Samu","Bambi"],
-    mandate:"Separación de residuos, orden de la mansión, turnos de limpieza y defensa del bosque andino patagónico."}
+const CASA = ["Agustin Benoit","Ezequiel Donovan","Fermin Martel","Francisco Nocito","Ignacio Cociffi","Juan Gardey","Juan Martel","Manuel Igarzabal","Marcos del Pino","Mariano Espina","Nicolas Boemo","Pablo Canavessi","Pedro Ballve","Pedro Fargas","Pedro Fernandez Quiroga","Ramiro Lynch","Ricardo Gardey","Santiago Martel","Santiago Paci","Santiago Vasquez"];
+const LOCALES = ["Facundo Squetino","Gonzalo Mulhall","Marcos Motti"]; // viven en Bariloche: todo menos sorteos
+const PEOPLE = [...CASA,...LOCALES].sort((a,b)=>a.localeCompare(b,"es"));
+const SUPER = ["Pedro Ballve","Ezequiel Donovan","Fermin Martel"]; // admins con acceso total
+const COM_INFO = {
+  creativa: {name:"Comisión Directiva Organizativa Creativa", mandate:"Emite comunicados oficiales, custodia el Programa de las Sorpresas, define la agenda cultural y conduce los Choice Awards."},
+  economica: {name:"Comisión Organizativa Económica y de Gestión de Recursos y Dinámicas", mandate:"Administra el Fondo, persigue deudores con cariño y co-firma las resoluciones de la organización."},
+  green: {name:"Gestión Green Team", mandate:"Abastecimiento, administración y distribución responsable del verde. Fumadero oficial al aire libre: adentro de la mansión no se prende nada."}
 };
-const ORG = [...COM.creativa.members, ...COM.economica.members];
-const isOrg = n => ORG.includes(n);
-const isIn = (k,n) => COM[k].members.includes(n);
+const COM_DEFAULT = {creativa:["Ricardo Gardey","Fermin Martel","Ezequiel Donovan","Mariano Espina"], economica:["Pedro Fargas","Pedro Ballve"], green:["Juan Gardey","Santiago Martel"]};
+function comCfg(){ const it=latest("comisiones"); return it? {...COM_DEFAULT,...it.data} : COM_DEFAULT; }
+async function saveCom(patch){ const cur=latest("comisiones"); if(cur) await Store.update(cur.id,patch); else await Store.add("comisiones",{...COM_DEFAULT,...patch}); }
+const isIn = (k,n) => (comCfg()[k]||[]).includes(n);
+const isOrg = n => SUPER.includes(n) || isIn("creativa",n) || isIn("economica",n);
+// Qué puede hacer cada comisión (los admins pueden todo)
+const PERMS = {comunicado:["creativa","economica"], cronograma:["creativa"], awards:["creativa"], buzon:["creativa"], cargos:["creativa"], cuartos:[], equipos:[]}; // sorteos: solo admins
+const can = (a,n) => !!n && (SUPER.includes(n) || (PERMS[a]||[]).some(k=>isIn(k,n)));
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1dFtbtQrFd43JzLPjTqeCjAub4kVsIgmiQNimiAD9qoQ";
+const TEAM_NAMES = ["Los Chefs del Nahuel Huapi","Brigada Parrillera","Los Lavaplatos del Catedral","Escuadrón Fernet","Comando Ñoqui","La Guardia del Chimichurri","Los Pinches del Sur","Cofradía del Choripán"];
 const VACANTES = [
   {id:"asado", name:"Ministerio de Fuego y Asado", mandate:"Parrilla, leña, punto de la carne y el chori de las 4 AM."},
   {id:"tribunal", name:"Tribunal de Disciplina y Multas", mandate:"Juzga faltas leves (dormirse, colarse, no lavar el vaso) y aplica penas en prendas o fernet."},
@@ -448,35 +470,6 @@ const VACANTES = [
   {id:"musica", name:"Dirección Nacional de Música", mandate:"Parlante, playlists y veto de canciones."},
   {id:"despertador", name:"Subsecretaría del Despertador", mandate:"Levanta a la tropa para excursiones. Cargo de alto riesgo."}
 ];
-
-const FLIGHTS = [
- ["Minus","AR 1525 / AR 1676","09:25","14:30","24/10","AR 1677 / AR 1546","15:20","20:15","31/10"],
- ["Camello","AR 1525 / AR 1676","09:25","14:30","24/10","AR 1677 / AR 1546","15:20","20:15","31/10"],
- ["Negro B","AR 1676","12:05","14:30","24/10","AR 1677","15:20","17:25","31/10"],
- ["Chori","AR 1676","12:05","14:30","24/10","AR 1677","15:20","17:25","31/10"],
- ["Bomo","AR 1883 / AR 1686","13:20","20:50",null,"AR 1694 / AR 1894","12:00","16:50",null],
- ["Juan","AR 1676","12:05","14:30","24/10","AR 1677","15:20","17:25","31/10"],
- ["Bambi","AR 1676","12:05","14:30","24/10","AR 1677","15:20","17:25","31/10"],
- ["Samu","AR 1676","12:05","14:30",null,"AR 1677","15:20","17:25",null],
- ["Bola","AR 1695","08:45","13:10",null,"AR 1675","13:20","15:25",null],
- ["Ramiro",null,"08:45","13:10","24/10",null,"10:00","12:05","31/10"],
- ["Cochi",null,null,null,null,null,null,null,null],
- ["Negro Pablo",null,null,null,null,null,null,null,null],
- ["Pedri FQ",null,"14:13","16:32","24/10","AR 1675","13:20","15:25","31/10"],
- ["Pololo","—","—","—",null,"AR 1669","10:00","12:05","31/10"],
- ["Pino","AR 1670","06:45","09:10","24/10","AR 1675","13:20","15:25","31/10"],
- ["El Parce","AR 1670","06:45","09:10","24/10","AR 1675","13:20","15:25","31/10"],
- ["Cabecha","AR 1670","06:45","09:10","24/10",null,null,null,null],
- ["EL WIZZARAP","AR 1666","05:45","08:10","24/10","AR 1675","13:20","15:25","31/10"],
- ["Taio","AR 1670","06:45","09:10","24/10","AR 1669","10:00","12:05","31/10"],
- ["gigilo",null,null,null,null,null,null,null,null],
- ["Fermín",null,null,null,null,null,null,null,null],
- ["Ballve",null,null,null,null,null,null,null,null]
-].map(r=>({n:r[0],iv:r[1],is:r[2],il:r[3],if:r[4],vv:r[5],vs:r[6],vl:r[7],vf:r[8]}));
-
-const HOSP = {"Negro B":[null,225,"Adelantó la seña (USD 630). A verificar."],"Cochi":[130,130],"Bambi":[225,225],"Ramiro":[225,225],"Pino":[125,225,"Lleva cash"],"Samu":[200,225],"Pololo":[225,225],"Bomo":[100,130],"Minus":[200,225],"Negro Pablo":[100,130],"Juan":[225,225],"Chori":[225,225],"El Parce":[0,225],"Cabecha":[0,225],"EL WIZZARAP":[0,225],"Taio":[225,225],"Camello":[0,225],"Bola":[0,225],"Pedri FQ":[225,225],"gigilo":[0,225]};
-const FONDO = {"Negro B":[350000,350000],"Cochi":[200000,200000],"Bambi":[0,350000],"Ramiro":[0,350000],"Pino":[0,350000],"Samu":[0,350000],"Pololo":[0,350000],"Minus":[0,350000],"Negro Pablo":[0,200000],"Juan":[0,350000],"Chori":[0,350000],"El Parce":[0,350000],"Cabecha":[350000,350000],"EL WIZZARAP":[0,350000],"Taio":[350000,350000],"Camello":[0,350000],"Bola":[350000,350000],"Pedri FQ":[350000,350000],"gigilo":[0,350000]};
-const ALIAS_FONDO = "barilochepibex.mp";
 
 const DAYS = [["2026-10-24","Sábado 24"],["2026-10-25","Domingo 25"],["2026-10-26","Lunes 26"],["2026-10-27","Martes 27"],["2026-10-28","Miércoles 28"],["2026-10-29","Jueves 29"],["2026-10-30","Viernes 30"],["2026-10-31","Sábado 31"]];
 const TRIP_START = new Date("2026-10-24T00:00:00-03:00");
@@ -585,8 +578,8 @@ const Store = {
   },
   async reload(){ const {data,error}=await sb.from("items").select("*").order("created_at",{ascending:true}); if(!error) ITEMS=data; },
   persist(){ if(!lsSet("pibex_items",ITEMS)) toast("No entra más en el modo demo."); },
-  async add(kind,data){
-    const row={kind,data,author:ME.name};
+  async add(kind,data,author){
+    const row={kind,data,author:author||ME.name};
     if(ONLINE){ const {data:r,error}=await sb.from("items").insert(row).select().single(); if(error) throw error; ITEMS.push(r); return r; }
     const r={...row,id:uid(),created_at:new Date().toISOString()}; ITEMS.push(r); this.persist(); return r;
   },
@@ -631,6 +624,10 @@ const Auth = {
     if(ONLINE){ const {data,error}=await sb.rpc("pibex_claim",{p_name:name,p_pin:pin,p_emoji:emoji}); if(error) throw error; return data; }
     const p=lsGet("pibex_perfiles")||{}; if(p[name]) return "taken"; if(Object.values(p).some(v=>v.emoji===emoji)) return "emoji";
     p[name]={pin,emoji}; lsSet("pibex_perfiles",p); return "ok";
+  },
+  async reset(admin,pin,name){
+    if(ONLINE){ const {data,error}=await sb.rpc("pibex_reset_pin",{p_admin:admin,p_admin_pin:pin,p_name:name}); if(error) throw error; return data; }
+    const p=lsGet("pibex_perfiles")||{}; if(!SUPER.includes(admin)) return "noadmin"; if(!p[admin]||p[admin].pin!==pin) return "bad"; delete p[name]; lsSet("pibex_perfiles",p); return "ok";
   },
   async login(name,pin,emoji){
     if(ONLINE){ const {data,error}=await sb.rpc("pibex_login",{p_name:name,p_pin:pin,p_emoji:emoji||null}); if(error) throw error; return data; }
@@ -684,21 +681,25 @@ function newCount(tab){ const since=TAB_SEEN[tab]||SEEN_PREV; return ITEMS.filte
 function markSeen(tab){ TAB_SEEN[tab]=Date.now(); lsSet("pibex_seen_tabs",TAB_SEEN); }
 
 /* ================= Router ================= */
-const TABS=[["inicio","Inicio"],["comunicados","Comunicados"],["cronograma","Cronograma"],["muro","Muro"],["fotos","Fotos"],["truco","Truco"],["awards","Choice Awards"],["cuartos","Cuartos"],["vuelos","Vuelos"],["plata","Plata"],["lugares","Lugares"],["comisiones","Comisiones"]];
+const MAIN_TABS=[["inicio","Inicio"],["comunicados","Comunicados"],["cronograma","Cronograma"],["truco","Truco"],["awards","Choice Awards"]];
+const MORE_TABS=[["cuartos","Cuartos"],["equipos","Equipos"],["comisiones","Comisiones"],["lugares","Lugares"],["plata","Plata y vuelos"],["muro","Muro"],["fotos","Fotos y videos"]];
+const TABS=[...MAIN_TABS,...MORE_TABS];
+let MORE_OPEN=false;
 let TAB = (location.hash||"").slice(1); if(!TABS.some(t=>t[0]===TAB)) TAB="inicio";
 const OPEN = new Set(); let EDIT=null; let PENDING=false, ARM=null, PHOTO_SORT="new", REVEAL=null;
 
 function renderTabs(){
-  $("#tabs").innerHTML = TABS.map(([id,l])=>{const n=id===TAB?0:newCount(id);return `<button class="tab" data-tab="${id}" ${id===TAB?'aria-current="page"':""}>${l}${n?`<span class="dot" aria-label="${n} novedades">${n}</span>`:""}</button>`}).join("");
-  const cur=document.querySelector(".tab[aria-current]"); if(cur) cur.scrollIntoView({inline:"center",block:"nearest"});
-  updateArrows();
+  const btn=([id,l])=>{const n=id===TAB?0:newCount(id);return `<button class="tab" data-tab="${id}" ${id===TAB?'aria-current="page"':""}>${l}${n?`<span class="dot" aria-label="${n} novedades">${n}</span>`:""}</button>`};
+  const inMore=MORE_TABS.some(t=>t[0]===TAB); const moreNew=MORE_TABS.reduce((s,[id])=>s+(id===TAB?0:newCount(id)),0);
+  $("#tabs").innerHTML = MAIN_TABS.map(btn).join("") + `<button class="tab more ${inMore?"in":""}" data-act="more" aria-expanded="${MORE_OPEN}">${inMore?esc(MORE_TABS.find(t=>t[0]===TAB)[1]):"Ver más"} ${MORE_OPEN?"▴":"▾"}${!MORE_OPEN&&moreNew?`<span class="dot">${moreNew}</span>`:""}</button>`;
+  const panel=$("#morepanel"); panel.hidden=!MORE_OPEN; panel.innerHTML=MORE_TABS.map(btn).join("");
 }
-function updateArrows(){ const t=$("#tabs"); if(!t) return; $("#tl").disabled = t.scrollLeft<=2; $("#tr").disabled = t.scrollLeft+t.clientWidth>=t.scrollWidth-2; }
+function updateArrows(){}
 function render(){
   if(TAB!=="inicio") markSeen(TAB);
   renderTabs();
   $("#mebtn").innerHTML = ME? `${esc(emojiOf(ME.name))} ${esc(ME.name)}` : "Entrar";
-  const demo = ONLINE?"":`<div class="banner"><b>Vista previa en modo demo.</b> Lo que cargues queda solo en este navegador. En la web real todo se comparte entre los 22.</div>`;
+  const demo = ONLINE?"":`<div class="banner"><b>Vista previa en modo demo.</b> Lo que cargues queda solo en este navegador. En la web real todo se comparte entre todos.</div>`;
   const autherr = AUTH_ERR?`<div class="banner"><b>Falta un paso en Supabase:</b> correr el SQL de usuarios (v2). Sin eso nadie puede entrar.</div>`:"";
   $("#main").innerHTML = demo + autherr + (VIEWS[TAB]||VIEWS.inicio)();
   PENDING=false; document.querySelector(".newpill")?.remove();
@@ -713,7 +714,7 @@ function liveRefresh(){
 }
 
 /* ================= Componentes ================= */
-const canDel = it => ME && (it.author===ME.name || isOrg(ME.name));
+const canDel = it => ME && (it.author===ME.name || SUPER.includes(ME.name));
 const delBtn = it => canDel(it) ? `<button class="link danger" data-act="del" data-id="${it.id}">borrar</button>`:"";
 /* ---- Audios tipo WhatsApp ---- */
 let REC=null;
@@ -768,33 +769,18 @@ function docBody(text){
     return (tx.length?`<p>${tx.map(esc).join("<br>")}</p>`:"")+(li.length?`<ul>${li.map(l=>`<li>${esc(l.slice(2))}</li>`).join("")}</ul>`:"");};
   return text.split(/\n\n+/).map(block=>{const lines=block.split("\n"); if(lines[0].startsWith("## ")){const h=lines.shift().slice(3);return `<h4>${esc(h)}</h4>`+(lines.length?para(lines):"")} return para(lines);}).join("");
 }
-const personOpts = (sel="",blank="— elegir —",list=PEOPLE) => `<option value="">${blank}</option>`+list.map(p=>`<option ${p===sel?"selected":""}>${esc(p)}</option>`).join("");
+const personOpts = (sel="",blank="— elegir —",list=PEOPLE) => `<option value="">${blank}</option>`+list.map(p=>`<option value="${esc(p)}" ${p===sel?"selected":""}>${esc(p)}</option>`).join("");
 function allComunicados(){ return [...SEED_COMUNICADOS,...of("comunicado")].map((c,i)=>({...c,num:i+1})); }
 function armBtn(id,label,confirmLabel,act,cls="btn sm"){ return ARM===id?`<button class="btn red sm" data-act="${act}" data-id="${id}">${confirmLabel}</button>`:`<button class="${cls}" data-act="arm" data-id="${id}">${label}</button>`; }
 
-/* ---- Vuelos y plata ---- */
-function flights(){ return FLIGHTS.map(f=>{ const o=of("vuelo").filter(i=>i.data.person===f.n).pop(); return o?{...f,...o.data.f,upd:o}:f; }); }
-function money(){
-  const extra=(p,c)=>of("pago").filter(i=>i.data.person===p&&i.data.concept===c).reduce((s,i)=>s+Number(i.data.amount||0),0);
-  return PEOPLE.map(p=>{const h=HOSP[p], f=FONDO[p];
-    return {p, h: h? {paid:h[0]==null?null:h[0]+extra(p,"hosp"), total:h[1], note:h[2]} : null, f: f? {paid:f[0]+extra(p,"fondo"), total:f[1]} : null};});
-}
-function statusPill(paid,total){
-  if(paid==null) return `<span class="pill warn">a verificar</span>`;
-  if(paid>=total) return `<span class="pill ok">pagado</span>`;
-  if(paid>0) return `<span class="pill warn">debe parte</span>`;
-  return `<span class="pill bad">debe todo</span>`;
-}
-
 /* ---- Cronograma ---- */
-function evStatus(e){ return e.data.status || (isOrg(e.author)?"ok":"pendiente"); }
+function evStatus(e){ return e.data.status || (can("cronograma",e.author)?"ok":"pendiente"); }
 function allEvents(){
-  const fs=flights(); const fixed=[];
-  const arr={}; fs.filter(f=>f.il&&f.il!=="—").forEach(f=>{(arr[f.il]=arr[f.il]||[]).push(f.n)});
-  Object.entries(arr).forEach(([t,ns])=>fixed.push({id:"fx-in-"+t,fixed:true,day:"2026-10-24",time:t,title:"Aterrizan en BRC",desc:ns.join(", ")}));
-  const dep={}; fs.filter(f=>f.vs).forEach(f=>{(dep[f.vs]=dep[f.vs]||[]).push(f.n)});
-  Object.entries(dep).forEach(([t,ns])=>fixed.push({id:"fx-out-"+t,fixed:true,day:"2026-10-31",time:t,title:"Despegan de BRC",desc:ns.join(", ")}));
-  fixed.push({id:"fx-awards",fixed:true,day:"2026-10-30",time:"22:00",title:"Ceremonia PIBEX Choice Awards",desc:"Entrega de premios. Horario a confirmar por la Comisión."});
+  const fixed=[
+    {id:"fx-llegada",fixed:true,day:"2026-10-24",time:"",title:"🛬 Llegamos a Bariloche",desc:"Llegadas escalonadas durante el día. Cada uno a la mansión cuando aterrice."},
+    {id:"fx-awards",fixed:true,day:"2026-10-30",time:"22:00",title:"🏆 Ceremonia PIBEX Choice Awards",desc:"Entrega de premios. Horario a confirmar por la Comisión."},
+    {id:"fx-vuelta",fixed:true,day:"2026-10-31",time:"",title:"✈️ Vuelta a casa",desc:"Salidas escalonadas durante el día. Hasta el próximo PIBEX."}
+  ];
   const user=of("event").map(e=>({...e.data,id:e.id,item:e,status:evStatus(e)}));
   return [...fixed,...user].map(e=>({...e,dayLabel:dayLabel(e.day),when:e.time?new Date(e.day+"T"+e.time+":00-03:00").getTime():null}));
 }
@@ -821,6 +807,12 @@ function tally(cat){ const last={}; of("vote").filter(v=>v.data.cat===cat).forEa
 /* ---- Cuartos ---- */
 function roomsCfg(){ const it=latest("cuartos"); return it? {...it.data,_id:it.id} : {rooms:[],assign:{}}; }
 async function saveRooms(patch){ const cur=latest("cuartos"); if(cur) await Store.update(cur.id,patch); else await Store.add("cuartos",{rooms:[],assign:{},...patch}); }
+
+/* ---- Equipos de cocina ---- */
+function teamsCfg(){ const it=latest("equipos"); return it? {...it.data,_id:it.id} : {count:4,names:TEAM_NAMES.slice(0,4),assign:{}}; }
+async function saveTeams(patch){ const cur=latest("equipos"); if(cur) await Store.update(cur.id,patch); else await Store.add("equipos",{count:4,names:TEAM_NAMES.slice(0,4),assign:{},...patch}); }
+const NIGHTS = DAYS.slice(0,7); // 24 al 30
+const MAX_DRAWS = 2;
 
 /* ---- Fotos ---- */
 const likes = id => refs("like",id);
@@ -867,22 +859,20 @@ inicio(){
   const com=allComunicados().pop(); const now=Date.now();
   const evs=allEvents(); const approved=evs.filter(e=>!e.fixed&&e.status==="ok"); const pend=evs.filter(e=>!e.fixed&&e.status==="pendiente");
   const nextEv=evs.filter(e=>(e.fixed||e.status==="ok")&&e.when&&e.when>now).sort((a,b)=>a.when-b.when)[0];
-  const m=money(); const hp=m.reduce((s,x)=>s+(x.h&&x.h.paid||0),0), ht=m.reduce((s,x)=>s+(x.h?x.h.total:0),0);
-  const fp=m.reduce((s,x)=>s+(x.f?x.f.paid:0),0), ft=m.reduce((s,x)=>s+(x.f?x.f.total:0),0);
-  const debenTodo=m.filter(x=>(x.h&&x.h.paid===0)).length;
-  const fs=flights(); const cargados=fs.filter(f=>f.il&&f.vs).length;
-  const arrivals=fs.filter(f=>/^\d\d:\d\d$/.test(f.il||"")).sort((a,b)=>a.il.localeCompare(b.il));
   const claimed=PEOPLE.filter(p=>PERFILES[p]); const missing=PEOPLE.filter(p=>!PERFILES[p]);
   const tr=trucoStats(); const lead=tr.par[0];
   const photos=of("photo"); const topPh=photos.slice().sort((a,b)=>likes(b.id).length-likes(a.id).length)[0];
   const talk={}; [...of("post"),...of("comment")].forEach(i=>talk[i.author]=(talk[i.author]||0)+1); const charla=Object.entries(talk).sort((a,b)=>b[1]-a[1])[0];
   const aw=awardsCfg(); const voters=new Set(of("vote").map(v=>v.author)).size;
   const rc=roomsCfg(); const myRoom=ME&&rc.assign&&rc.assign[ME.name]?rc.rooms.find(r=>r.id===rc.assign[ME.name]):null;
+  const tc=teamsCfg(); const myTeam=ME&&tc.drawnAt&&tc.assign[ME.name]!=null?tc.assign[ME.name]:null;
+  const myNights=myTeam!=null?NIGHTS.filter((_,i)=>i%tc.count===myTeam).map(d=>d[1]):[];
   const feedKinds={post:"publicó en el muro",comment:"comentó",event:"propuso un plan",photo:"subió un archivo",truco:"cargó un partido de truco",comunicado:"emitió un comunicado",place:"sugirió un lugar"};
   const nuevos=ITEMS.filter(i=>feedKinds[i.kind]&&isNew(i,SEEN_PREV));
   const feed=(nuevos.length?nuevos:ITEMS.filter(i=>feedKinds[i.kind])).slice(-10).reverse();
   const tile=(tab,lbl,big,sub)=>`<button class="tile" data-tab="${tab}"><span class="lbl">${lbl}</span><span class="big">${big}</span>${sub?`<span class="sub">${sub}</span>`:""}</button>`;
-  return `
+  const pinReqs=ME&&SUPER.includes(ME.name)?of("pin_reset").filter(r=>!r.data.done):[];
+  return `${pinReqs.length?`<button class="banner" data-tab="comisiones" style="text-align:left;cursor:pointer">🔑 <b>${pinReqs.length} ${pinReqs.length===1?"pedido":"pedidos"} de blanqueo de PIN</b> (${esc(pinReqs.map(r=>r.author).join(", "))}). Tocá para resolver.</button>`:""}
   <section class="sheet official">
     <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
     <div class="count" id="countdown">${countdownHTML()}</div>
@@ -890,28 +880,28 @@ inicio(){
     <div id="wx"><p class="muted small">Cargando pronóstico…</p></div>
   </section>
   <div class="tiles">
-    ${tile("inicio","Ya entraron",`${claimed.length}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,missing.length?("Faltan: "+esc(missing.slice(0,6).join(", "))+(missing.length>6?"…":"")):"Están todos")}
-    ${tile("plata","Hospedaje",pct(hp,ht)+"%",`${usd(hp)} de ${usd(ht)}`)}
-    ${tile("plata","Fondo común",pct(fp,ft)+"%",`${debenTodo} deben todo el hospedaje`)}
-    ${tile("vuelos","Vuelos completos",`${cargados}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,`${PEOPLE.length-cargados} con datos faltantes`)}
+    ${tile("inicio","Ya entraron",`${claimed.length}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,missing.length?("Faltan: "+esc(missing.slice(0,5).map(n=>n.split(" ")[0]+" "+n.split(" ").slice(-1)[0][0]+".").join(", "))+(missing.length>5?"…":"")):"Están todos")}
     ${tile("cronograma","Planes aprobados",approved.length,`${pend.length} propuestas en revisión`)}
-    ${tile("fotos","Fotos y videos",photos.length,photos.length?`${of("like").length} me gusta repartidos`:"Todavía ninguna")}
     ${tile("truco","Partidos de truco",tr.ms.length,lead?`Puntero: ${esc(lead.k)}`:"Mesa sin abrir")}
     ${tile("awards","Choice Awards",aw.phase==="hidden"?"🔒":aw.phase==="voting"?voters:"🏆",aw.phase==="hidden"?"Categorías en deliberación":aw.phase==="voting"?"ya votaron":"Resultados revelados")}
+    ${tile("cuartos","Cuartos",rc.drawnAt?"✓":"—",rc.drawnAt?"Sorteo realizado":"Sorteo pendiente")}
+    ${tile("equipos","Equipos de cocina",tc.drawnAt?tc.count:"—",tc.drawnAt?"equipos sorteados":"Sorteo pendiente")}
+    ${tile("fotos","Fotos y videos",photos.length,photos.length?`${of("like").length} me gusta repartidos`:"Todavía ninguna")}
+    ${tile("muro","Muro",of("post").length,`${of("comment").length} comentarios`)}
   </div>
   <div class="grid2">
     <section class="sheet"><span class="eyebrow">Último comunicado · N.º ${com.num}</span><h3>${esc(com.data.title)}</h3>
       <p class="muted small">${esc(com.data.body.replace(/\n/g," ").slice(0,150))}…</p><button class="link" data-tab="comunicados">Leer completo</button></section>
     <section class="sheet"><span class="eyebrow">Próximo en el cronograma</span>
-      ${nextEv?`<h3>${esc(nextEv.title)}</h3><p class="mono small">${esc(nextEv.dayLabel)} · ${esc(nextEv.time||"")}</p>${nextEv.desc?`<p class="small muted">${esc(nextEv.desc)}</p>`:""}`:`<p class="empty">Nada agendado con hora.</p>`}
+      ${nextEv?`<h3>${esc(nextEv.title)}</h3><p class="mono small">${esc(nextEv.dayLabel)} · ${esc(nextEv.time||"")}</p>${nextEv.desc?`<p class="small muted">${esc(nextEv.desc)}</p>`:""}`:`<h3>🛬 Sábado 24: llegamos</h3><p class="small muted">Todavía no hay planes con hora.</p>`}
       <button class="link" data-tab="cronograma">Ver cronograma</button></section>
-    <section class="sheet"><span class="eyebrow">Operativo aeropuerto · sábado 24</span>
-      ${arrivals.length?`<p><b>Primero en pisar Bariloche:</b> ${esc(arrivals[0].n)} (${arrivals[0].il})</p><p><b>Último en llegar:</b> ${esc(arrivals[arrivals.length-1].n)} (${arrivals[arrivals.length-1].il})</p><p class="muted small">${Object.values(arrivals.reduce((a,f)=>{(a[f.il]=a[f.il]||[]).push(f.n);return a},{})).sort((a,b)=>b.length-a.length)[0].length} llegan juntos en el vuelo más cargado.</p>`:""}
-      <button class="link" data-tab="vuelos">Ver llegadas</button></section>
-    <section class="sheet"><span class="eyebrow">Tu cuarto</span>
+    ${LOCALES.includes(ME&&ME.name)?"":`<section class="sheet"><span class="eyebrow">Tu cuarto</span>
       ${myRoom?`<h3>${esc(myRoom.name)}</h3><p class="small muted">Con ${esc(PEOPLE.filter(p=>rc.assign[p]===myRoom.id&&p!==ME.name).join(", ")||"nadie, suerte")}</p>`:`<p class="empty">${rc.drawnAt?"No te tocó cuarto todavía.":"El sorteo de cuartos todavía no se hizo."}</p>`}
       <button class="link" data-tab="cuartos">Ver cuartos</button></section>
-    ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span>${topPh.data.type==="video"?`<video class="thumb" src="${esc(topPh.data.url)}" muted playsinline preload="metadata"></video>`:`<img class="thumb" src="${esc(topPh.data.thumb||topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}">`}<span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
+    <section class="sheet"><span class="eyebrow">Tu equipo de cocina</span>
+      ${myTeam!=null?`<h3>${esc(tc.names[myTeam]||"Equipo "+(myTeam+1))}</h3><p class="small muted">Te toca: ${esc(myNights.join(", "))}</p>`:`<p class="empty">${tc.drawnAt?"No estás en ningún equipo.":"El sorteo de equipos todavía no se hizo."}</p>`}
+      <button class="link" data-tab="equipos">Ver equipos</button></section>`}
+    ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span><img class="thumb" src="${esc(topPh.data.thumb||topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}"><span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
     ${charla?`<section class="sheet"><span class="eyebrow">El más charlatán del muro</span><h3>${esc(charla[0])}</h3><p class="small muted">${charla[1]} publicaciones y comentarios</p><button class="link" data-tab="muro">Ir al muro</button></section>`:""}
   </div>
   <section class="sheet">
@@ -921,21 +911,21 @@ inicio(){
 },
 
 comunicados(){
-  const list=allComunicados().reverse(); const can=ME&&isOrg(ME.name);
+  const list=allComunicados().reverse(); const canCom=ME&&can("comunicado",ME.name);
   return `<div class="head"><span class="eyebrow">Lineamientos y resoluciones</span><h2>Comunicados oficiales</h2><p>Los emite la organización (Comisión Creativa y Comisión Económica). Tienen fuerza de ley dentro de la mansión.</p></div>
-  ${can?`<form class="sheet" data-form="comunicado"><span class="eyebrow">Emitir comunicado N.º ${list.length+1}</span>
+  ${canCom?`<form class="sheet" data-form="comunicado"><span class="eyebrow">Emitir comunicado N.º ${list.length+1}</span>
     <div class="field"><label for="com-t">Título</label><input type="text" id="com-t" name="title" required></div>
     <div class="field"><label for="com-b">Texto</label><textarea id="com-b" name="body" rows="8" required placeholder="Usá ## para subtítulos y - para listas"></textarea></div>
     <div><button class="btn">Emitir y avisar a todos</button></div></form>`:""}
   ${list.map(c=>`<article class="sheet official doc" id="${c.id}">
-    <span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span><h3>${esc(c.data.title)}</h3>
+    <div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:4px"><span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span><h3>${esc(c.data.title)}</h3></div></div>
     <div class="body">${docBody(c.data.body)}</div>
     <p class="sign">${c.author!=="Comisión"&&isIn("economica",c.author)?"Comisión Organizativa Económica":"Comisión Organizativa Creativa Barilochense"}${c.author!=="Comisión"?` · firmado por ${esc(c.author)}`:""} ${c.id.startsWith("seed")?"":delBtn(c)}</p>
     ${thread(c.id)}</article>`).join("")}`;
 },
 
 cronograma(){
-  const evs=allEvents(); const org=ME&&isOrg(ME.name);
+  const evs=allEvents(); const org=ME&&can("cronograma",ME.name);
   const pend=evs.filter(e=>!e.fixed&&e.status==="pendiente");
   const rej=evs.filter(e=>!e.fixed&&e.status==="rechazado"&&(org||(ME&&e.item.author===ME.name)));
   return `<div class="head"><span class="eyebrow">Programa general · 24 al 31 de octubre</span><h2>Cronograma</h2><p>Cualquiera propone; la organización valida. Lo aprobado entra al programa oficial.</p></div>
@@ -1002,7 +992,7 @@ truco(){
         <div class="field"><label for="t-s1">Puntos</label><input type="number" id="t-s1" name="s1" min="0" max="40" required></div></div>
       <div class="stack"><b>Pareja 2</b><div class="fgrid"><select id="t-b1" name="b1" aria-label="Pareja 2, jugador 1">${personOpts()}</select><select id="t-b2" name="b2" aria-label="Pareja 2, jugador 2">${personOpts()}</select></div>
         <div class="field"><label for="t-s2">Puntos</label><input type="number" id="t-s2" name="s2" min="0" max="40" required></div></div>
-    </div><div><button class="btn">Cargar resultado</button></div></form>
+    </div><p class="small muted" id="t-hint">Un jugador no puede estar en las dos parejas.</p><div><button class="btn">Cargar resultado</button></div></form>
   <section class="stack"><h3>Ranking de parejas</h3>${par.length?tbl(par,"Pareja"):`<p class="empty">Sin partidos todavía.</p>`}</section>
   <section class="stack"><h3>Ranking individual</h3>${ind.length?tbl(ind,"Jugador"):`<p class="empty">Sin partidos todavía.</p>`}</section>
   ${facts}
@@ -1010,7 +1000,7 @@ truco(){
 },
 
 awards(){
-  const cfg=awardsCfg(); const org=ME&&isOrg(ME.name); const voters=new Set(of("vote").map(v=>v.author)).size;
+  const cfg=awardsCfg(); const org=ME&&can("awards",ME.name); const voters=new Set(of("vote").map(v=>v.author)).size;
   const head=`<div class="head"><span class="eyebrow">Ceremonia de cierre · viernes 30 a la noche</span><h2>PIBEX Choice Awards</h2></div>`;
   const panel = org?`<section class="org"><span class="eyebrow">Panel de la organización · solo lo ven ustedes 6</span>
     ${cfg.phase==="hidden"?`<p class="small">Las categorías están ocultas para el resto. Editen, borren o sumen, y cuando estén conformes habiliten la votación.</p>
@@ -1029,77 +1019,53 @@ awards(){
 },
 
 cuartos(){
-  const cfg=roomsCfg(); const org=ME&&isOrg(ME.name); const cap=cfg.rooms.reduce((s,r)=>s+Number(r.cap||0),0);
-  const drawn=!!cfg.drawnAt; const sinCuarto=drawn?PEOPLE.filter(p=>!cfg.assign[p]):[];
+  const cfg=roomsCfg(); const org=ME&&can("cuartos",ME.name); const cap=cfg.rooms.reduce((s,r)=>s+Number(r.cap||0),0);
+  const drawn=!!cfg.drawnAt; const draws=cfg.draws||(drawn?1:0); const sinCuarto=drawn?CASA.filter(p=>!cfg.assign[p]):[];
   const panel=org?`<section class="org"><span class="eyebrow">Panel de la organización</span>
-    ${cfg.rooms.length?cfg.rooms.map(r=>`<div class="row between small"><span><b>${esc(r.name)}</b> · ${r.cap} camas</span><button class="link danger" data-act="roomdel" data-id="${r.id}">quitar</button></div>`).join(""):`<p class="small">Carguen los cuartos de la mansión con sus camas.</p>`}
-    <form class="fgrid" data-form="room"><input type="text" id="rm-n" name="name" placeholder="Nombre (ej: Suite del lago)" required aria-label="Nombre del cuarto"><input type="number" id="rm-c" name="cap" min="1" max="12" placeholder="Camas" required aria-label="Camas"><button class="btn sm">Agregar cuarto</button></form>
-    <p class="small ${cap<PEOPLE.length?"":"muted"}">Camas cargadas: <b>${cap}</b> para ${PEOPLE.length} personas.${cap<PEOPLE.length&&cfg.rooms.length?" Los que sobren quedan en el living.":""}</p>
-    ${cfg.rooms.length?`<div class="row">${armBtn("rm-draw",drawn?"Volver a sortear":"Hacer el sorteo",drawn?"Confirmar: se pierde el sorteo actual":"Confirmar sorteo","rm-draw")}</div>`:""}
-    ${drawn?`<form class="fgrid" data-form="swap"><select id="sw-a" name="a" aria-label="Persona 1">${personOpts("","Intercambiar a…")}</select><select id="sw-b" name="b" aria-label="Persona 2">${personOpts("","…con")}</select><button class="btn ghost sm">Intercambiar</button></form>`:""}
+    ${cfg.rooms.length?cfg.rooms.map(r=>`<div class="row between small"><span><b>${esc(r.name)}</b> · ${r.cap} camas</span>${drawn?"":`<button class="link danger" data-act="roomdel" data-id="${r.id}">quitar</button>`}</div>`).join(""):`<p class="small">Carguen los cuartos de la mansión y cuántas camas tiene cada uno.</p>`}
+    ${drawn?"":`<form class="fgrid" data-form="room"><input type="text" id="rm-n" name="name" placeholder="Nombre (ej: Suite del lago)" required aria-label="Nombre del cuarto"><input type="number" id="rm-c" name="cap" min="1" max="12" placeholder="Camas" required aria-label="Camas"><button class="btn sm">Agregar cuarto</button></form>`}
+    <p class="small">Camas cargadas: <b>${cap}</b> para ${CASA.length} personas.${cap<CASA.length&&cfg.rooms.length?" Los que sobren quedan en el living.":""} Los ${LOCALES.length} que viven en Bariloche no entran en el sorteo.</p>
+    ${cfg.rooms.length?(draws<MAX_DRAWS?`<div class="row">${armBtn("rm-draw",`🎲 Sortear (intento ${draws+1} de ${MAX_DRAWS})`,draws?"Confirmar: se reemplaza el sorteo anterior":"Confirmar sorteo","rm-draw")}</div>`:`<p class="small"><span class="pill warn">Sorteo cerrado</span> Se usaron los ${MAX_DRAWS} intentos.${SUPER.includes(ME.name)?` <button class="link" data-act="rm-reopen">Reabrir intentos</button>`:""}</p>`):""}
+    ${drawn?`<form class="fgrid" data-form="swap"><select id="sw-a" name="a" aria-label="Persona 1">${personOpts("","Intercambiar a…",CASA)}</select><select id="sw-b" name="b" aria-label="Persona 2">${personOpts("","…con",CASA)}</select><button class="btn ghost sm">Intercambiar</button></form>`:""}
   </section>`:"";
   return `<div class="head"><span class="eyebrow">Distribución habitacional · por sorteo</span><h2>Cuartos</h2><p>Dónde duerme cada uno. Lo sortea la organización y es inapelable (salvo coima en fernet).</p></div>
   ${panel}
   ${!drawn?`<section class="sheet official"><span class="eyebrow">Estado</span><h3>Sorteo pendiente</h3><p class="muted">${cfg.rooms.length?`Hay ${cfg.rooms.length} cuartos cargados. La organización avisa cuando se sortea.`:"Todavía no está definido cómo es la mansión por dentro."}</p></section>`
-  :`<section class="sheet"><div class="row between"><span class="small muted">Sorteado ${ago(cfg.drawnAt)} por ${esc(cfg.drawnBy||"la organización")}</span><button class="btn ghost sm" data-act="replay">▶ Revivir el sorteo</button></div></section>
-   <div class="rooms" id="rooms">${cfg.rooms.map(r=>{const ps=PEOPLE.filter(p=>cfg.assign[p]===r.id);const mine=ME&&ps.includes(ME.name);
-     return `<section class="room ${mine?"mine":""}"><span class="eyebrow">${ps.length}/${r.cap} camas${mine?" · tu cuarto":""}</span><h3>${esc(r.name)}</h3><div class="names">${ps.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}" data-p="${esc(p)}">${esc(emojiOf(p))} ${esc(p)}</span>`).join("")}</div></section>`}).join("")}
-     ${sinCuarto.length?`<section class="room"><span class="eyebrow">Sin cama asignada</span><h3>Living</h3><div class="names">${sinCuarto.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}" data-p="${esc(p)}">${esc(p)}</span>`).join("")}</div></section>`:""}</div>`}`;
+  :`<section class="sheet"><div class="row between"><span class="small muted">Intento ${draws} de ${MAX_DRAWS} · sorteado ${ago(cfg.drawnAt)} por ${esc(cfg.drawnBy||"la organización")}</span><button class="btn ghost sm" data-act="replay" data-id="rooms">▶ Revivir el sorteo</button></div></section>
+   <div class="rooms" id="rooms">${cfg.rooms.map(r=>{const ps=CASA.filter(p=>cfg.assign[p]===r.id);const mine=ME&&ps.includes(ME.name);
+     return `<section class="room ${mine?"mine":""}"><span class="eyebrow">${ps.length}/${r.cap} camas${mine?" · tu cuarto":""}</span><h3>${esc(r.name)}</h3><div class="names">${ps.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}">${esc(emojiOf(p))} ${esc(p)}</span>`).join("")}</div></section>`}).join("")}
+     ${sinCuarto.length?`<section class="room"><span class="eyebrow">Sin cama asignada</span><h3>Living</h3><div class="names">${sinCuarto.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}">${esc(p)}</span>`).join("")}</div></section>`:""}</div>`}`;
 },
 
-vuelos(){
-  const fs=flights();
-  const groups={}; fs.filter(f=>f.il&&f.il!=="—").forEach(f=>{(groups[f.il]=groups[f.il]||[]).push(f)});
-  const arrivals=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0]));
-  const dgroups={}; fs.filter(f=>f.vs).forEach(f=>{(dgroups[f.vs]=dgroups[f.vs]||[]).push(f)});
-  const deps=Object.entries(dgroups).sort((a,b)=>a[0].localeCompare(b[0]));
-  const missing=fs.filter(f=>!f.il||!f.vs||!f.iv||!f.vv); const mine=ME&&fs.find(f=>f.n===ME.name);
-  const c=v=>v?esc(v):`<span class="pill bad">falta</span>`; const tv=v=>/^\d\d:\d\d$/.test(v||"")?v:"";
-  const blk=(t,l)=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(x=>x).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span></div></div>`;
-  return `<div class="head"><span class="eyebrow">Logística aérea · Aeropuerto BRC</span><h2>Vuelos</h2><p>Llegadas agrupadas por hora para organizar quién busca a quién. Cada uno puede corregir el suyo.</p></div>
-  <div class="grid2">
-    <section class="sheet"><span class="eyebrow">Llegadas · sábado 24</span>${arrivals.map(([t,l])=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(f=>f.iv).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span><div class="names">${l.map(f=>`<span class="name">${esc(f.n)}</span>`).join("")}</div></div></div>`).join("")}</section>
-    <section class="sheet"><span class="eyebrow">Salidas · sábado 31</span>${deps.map(([t,l])=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(f=>f.vv).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span><div class="names">${l.map(f=>`<span class="name">${esc(f.n)}</span>`).join("")}</div></div></div>`).join("")}</section>
-  </div>
-  ${missing.length?`<section class="sheet"><span class="eyebrow">Faltan datos de</span><div class="names">${missing.map(f=>`<span class="name">${esc(f.n)}</span>`).join("")}</div></section>`:""}
-  <section class="stack"><h3>Tabla completa</h3><div class="tscroll"><table><thead><tr><th>Nombre</th><th>Ida</th><th class="num">Sale</th><th class="num">Llega</th><th>Vuelta</th><th class="num">Sale</th><th class="num">Llega</th></tr></thead><tbody>
-  ${fs.map(f=>`<tr class="${ME&&f.n===ME.name?"me":""}"><td>${esc(f.n)}${f.upd?` <span class="pill info">actualizado</span>`:""}</td><td class="mono">${c(f.iv)}</td><td class="num">${c(f.is)}</td><td class="num">${c(f.il)}</td><td class="mono">${c(f.vv)}</td><td class="num">${c(f.vs)}</td><td class="num">${c(f.vl)}</td></tr>`).join("")}
-  </tbody></table></div></section>
-  ${mine?`<form class="sheet" data-form="vuelo"><span class="eyebrow">Actualizar mi vuelo · ${esc(ME.name)}</span><div class="fgrid">
-      <div class="field"><label for="vf-iv">Vuelo ida</label><input type="text" id="vf-iv" name="iv" value="${esc(mine.iv||"")}"></div>
-      <div class="field"><label for="vf-is">Sale</label><input type="time" id="vf-is" name="is" value="${tv(mine.is)}"></div>
-      <div class="field"><label for="vf-il">Llega BRC</label><input type="time" id="vf-il" name="il" value="${tv(mine.il)}"></div>
-      <div class="field"><label for="vf-vv">Vuelo vuelta</label><input type="text" id="vf-vv" name="vv" value="${esc(mine.vv||"")}"></div>
-      <div class="field"><label for="vf-vs">Sale BRC</label><input type="time" id="vf-vs" name="vs" value="${tv(mine.vs)}"></div>
-      <div class="field"><label for="vf-vl">Llega</label><input type="time" id="vf-vl" name="vl" value="${tv(mine.vl)}"></div>
-    </div><div><button class="btn">Guardar mi vuelo</button></div></form>`:""}`;
+equipos(){
+  const cfg=teamsCfg(); const org=ME&&can("equipos",ME.name); const drawn=!!cfg.drawnAt; const draws=cfg.draws||(drawn?1:0);
+  const n=cfg.count; const names=[...Array(n)].map((_,i)=>cfg.names[i]||TEAM_NAMES[i]||"Equipo "+(i+1));
+  const nightsOf=i=>NIGHTS.filter((_,k)=>k%n===i);
+  const panel=org?`<section class="org"><span class="eyebrow">Panel de la organización</span>
+    <form class="stack" data-form="teams" style="gap:8px">
+      <div class="field" style="max-width:220px"><label for="tm-n">Cantidad de equipos</label><select id="tm-n" name="count" ${drawn?"disabled":""}>${[2,3,4,5,6,7].map(k=>`<option ${k===n?"selected":""}>${k}</option>`).join("")}</select></div>
+      ${names.map((nm,i)=>`<div class="field"><label for="tm-${i}">Nombre del equipo ${i+1}</label><input type="text" id="tm-${i}" name="name${i}" value="${esc(nm)}" maxlength="40"></div>`).join("")}
+      <div><button class="btn ghost sm">Guardar nombres${drawn?"":" y cantidad"}</button></div>
+    </form>
+    <p class="small">Se reparten los ${CASA.length} que duermen en la casa, parejo entre ${n} equipos (unos ${Math.floor(CASA.length/n)} por equipo). Los ${LOCALES.length} de Bariloche no entran.</p>
+    ${draws<MAX_DRAWS?`<div class="row">${armBtn("tm-draw",`🎲 Sortear equipos (intento ${draws+1} de ${MAX_DRAWS})`,draws?"Confirmar: se reemplaza el sorteo anterior":"Confirmar sorteo","tm-draw")}</div>`:`<p class="small"><span class="pill warn">Sorteo cerrado</span> Se usaron los ${MAX_DRAWS} intentos.${SUPER.includes(ME.name)?` <button class="link" data-act="tm-reopen">Reabrir intentos</button>`:""}</p>`}
+    ${drawn?`<form class="fgrid" data-form="tswap"><select id="ts-a" name="a" aria-label="Persona 1">${personOpts("","Intercambiar a…",CASA)}</select><select id="ts-b" name="b" aria-label="Persona 2">${personOpts("","…con",CASA)}</select><button class="btn ghost sm">Intercambiar</button></form>`:""}
+  </section>`:"";
+  return `<div class="head"><span class="eyebrow">Brigadas de cocina · por sorteo</span><h2>Equipos</h2><p>Cada noche un equipo se encarga de todo: decidir qué se come, comprar, cocinar, lavar y dejar ordenado. Del sábado 24 al viernes 30, rotando.</p></div>
+  ${panel}
+  ${!drawn?`<section class="sheet official"><span class="eyebrow">Estado</span><h3>Sorteo pendiente</h3><p class="muted">${n} equipos previstos: ${esc(names.join(", "))}. La organización avisa cuando se sortea.</p></section>`
+  :`<section class="sheet"><div class="row between"><span class="small muted">Intento ${draws} de ${MAX_DRAWS} · sorteado ${ago(cfg.drawnAt)} por ${esc(cfg.drawnBy||"la organización")}</span><button class="btn ghost sm" data-act="replay" data-id="teams">▶ Revivir el sorteo</button></div></section>
+  <div class="rooms" id="teams">${names.map((nm,i)=>{const ps=CASA.filter(p=>cfg.assign[p]===i);const mine=ME&&ps.includes(ME.name);
+    return `<section class="room ${mine?"mine":""}"><span class="eyebrow">Equipo ${i+1}${mine?" · tu equipo":""}</span><h3>${esc(nm)}</h3>
+      <p class="small"><b>Cocina:</b> ${esc(nightsOf(i).map(d=>d[1]).join(", "))}</p>
+      <div class="names">${ps.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}">${esc(emojiOf(p))} ${esc(p)}</span>`).join("")}</div></section>`}).join("")}</div>
+  <section class="sheet"><span class="eyebrow">Rotación de noches</span>${NIGHTS.map((d,k)=>`<div class="row between small"><span>${d[1]}</span><b>${esc(names[k%n])}</b></div>`).join("")}</section>`}`;
 },
 
 plata(){
-  const m=money(); const canPay=ME&&isIn("economica",ME.name);
-  const hp=m.reduce((s,x)=>s+(x.h&&x.h.paid||0),0), ht=m.reduce((s,x)=>s+(x.h?x.h.total:0),0);
-  const fp=m.reduce((s,x)=>s+(x.f?x.f.paid:0),0), ft=m.reduce((s,x)=>s+(x.f?x.f.total:0),0);
-  const mine=ME&&m.find(x=>x.p===ME.name);
-  return `<div class="head"><span class="eyebrow">Tesorería · Comisión Económica</span><h2>Plata</h2><p>Hospedaje en dólares (el que depositó dólares recibe dólares) y Fondo común en pesos, a $50.000 por día.</p></div>
-  ${mine?`<section class="sheet official"><span class="eyebrow">Tu situación, ${esc(ME.name)}</span><div class="row">
-    <span>Hospedaje: ${mine.h?`<b class="mono">${mine.h.paid==null?"—":usd(mine.h.paid)} / ${usd(mine.h.total)}</b> ${statusPill(mine.h.paid,mine.h.total)}`:`<span class="pill info">sin datos</span>`}</span>
-    <span>Fondo: ${mine.f?`<b class="mono">${ars(mine.f.paid)} / ${ars(mine.f.total)}</b> ${statusPill(mine.f.paid,mine.f.total)}`:`<span class="pill info">sin datos</span>`}</span></div></section>`:""}
-  <div class="grid2">
-    <section class="sheet"><span class="eyebrow">Hospedaje</span><div class="big">${usd(hp)}</div><div class="bar"><i style="width:${Math.min(100,hp/ht*100)}%"></i></div><p class="mono small muted">de ${usd(ht)} · faltan ${usd(ht-hp)}</p></section>
-    <section class="sheet"><span class="eyebrow">Fondo común</span><div class="big">${ars(fp)}</div><div class="bar"><i style="width:${Math.min(100,fp/ft*100)}%"></i></div><p class="mono small muted">de ${ars(ft)} · faltan ${ars(ft-fp)}</p>
-      <div class="copybox"><span class="small">Alias:</span><code>${ALIAS_FONDO}</code><button class="btn ghost sm" data-act="copy" data-text="${ALIAS_FONDO}">Copiar</button></div></section>
-  </div>
-  <div class="tscroll"><table><thead><tr><th>Integrante</th><th class="num">Hospedaje</th><th>Estado</th><th class="num">Fondo</th><th>Estado</th></tr></thead><tbody>
-  ${m.map(x=>`<tr class="${ME&&x.p===ME.name?"me":""}"><td>${esc(x.p)}${x.h&&x.h.note?` <span class="muted small">· ${esc(x.h.note)}</span>`:""}</td>
-    <td class="num">${x.h?(x.h.paid==null?"—":usd(x.h.paid))+" / "+x.h.total:"—"}</td><td>${x.h?statusPill(x.h.paid,x.h.total):`<span class="pill info">sin datos</span>`}</td>
-    <td class="num">${x.f?ars(x.f.paid):"—"}</td><td>${x.f?statusPill(x.f.paid,x.f.total):`<span class="pill info">sin datos</span>`}</td></tr>`).join("")}
-  </tbody></table></div>
-  <p class="muted small">Base: planilla Bariloche PIBEX 2026 (último pago cargado el 7/10). Lo que registra la Comisión Económica acá se suma arriba.</p>
-  ${canPay?`<form class="sheet" data-form="pago"><span class="eyebrow">Registrar pago (Comisión Económica)</span><div class="fgrid">
-    <div class="field"><label for="pg-p">Quién</label><select id="pg-p" name="person" required>${personOpts()}</select></div>
-    <div class="field"><label for="pg-c">Concepto</label><select id="pg-c" name="concept"><option value="hosp">Hospedaje (USD)</option><option value="fondo">Fondo ($)</option></select></div>
-    <div class="field"><label for="pg-a">Monto</label><input type="number" id="pg-a" name="amount" required step="any"></div></div><div><button class="btn">Registrar</button></div></form>`:""}
-  ${of("pago").length?`<section class="sheet"><span class="eyebrow">Pagos registrados en la web</span>${of("pago").slice().reverse().map(p=>`<div class="row between small"><span><b>${esc(p.data.person)}</b> · ${p.data.concept==="hosp"?usd(p.data.amount):ars(p.data.amount)} ${p.data.concept==="hosp"?"hospedaje":"fondo"}</span><span class="muted">${esc(p.author)} · ${ago(p.created_at)} ${delBtn(p)}</span></div>`).join("")}</section>`:""}`;
+  return `<div class="head"><span class="eyebrow">Tesorería y logística aérea</span><h2>Plata y vuelos</h2><p>La planilla oficial de la Comisión Económica, siempre actualizada. Abajo de la planilla están las pestañas: Vuelos, Hospedaje, Fondo y Gastos.</p></div>
+  <section class="sheet"><div class="row between"><span class="small muted">Lo que se cambia en la planilla se ve acá al recargar.</span><a class="btn sm" href="${SHEET_URL}/edit?usp=sharing" target="_blank" rel="noopener">Abrir en Google Sheets ↗</a></div>
+    <div class="sheetframe"><iframe src="${SHEET_URL}/preview" title="Planilla Plata y vuelos" loading="lazy"></iframe></div></section>`;
 },
 
 lugares(){
@@ -1115,10 +1081,23 @@ lugares(){
 },
 
 comisiones(){
-  const org=ME&&isOrg(ME.name); const isCre=ME&&isIn("creativa",ME.name);
+  const org=ME&&can("cargos",ME.name); const isCre=ME&&can("buzon",ME.name); const admin=ME&&SUPER.includes(ME.name);
   const sorp=of("sorpresa"); const mine=ME?sorp.filter(s=>s.author===ME.name):[];
   return `<div class="head"><span class="eyebrow">Organigrama institucional</span><h2>Comisiones</h2><p>Las autoridades electas por aclamación. Hay cargos vacantes: postulate y la organización decide.</p></div>
-  ${Object.values(COM).map(c=>`<section class="sheet com"><span class="eyebrow">En funciones</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.mandate)}</p><div class="names">${c.members.map(n=>`<span class="name">${esc(emojiOf(n))} ${esc(n)}</span>`).join("")}</div></section>`).join("")}
+  ${Object.entries(COM_INFO).map(([k,c])=>{const ms=comCfg()[k]||[];return `<section class="sheet com"><span class="eyebrow">En funciones</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.mandate)}</p>
+    <div class="names">${ms.length?ms.map(n=>`<span class="name">${esc(emojiOf(n))} ${esc(n)}${admin?` <button class="link danger" data-act="com-rm" data-id="${k}|${esc(n)}" aria-label="Quitar a ${esc(n)}">✕</button>`:""}</span>`).join(""):`<span class="empty">Sin integrantes cargados.</span>`}</div>
+    ${admin?`<form class="cform" data-form="com-add" data-key="${k}"><select id="ca-${k}" name="person" aria-label="Sumar integrante">${personOpts("","Sumar integrante…",PEOPLE.filter(p=>!ms.includes(p)))}</select><button class="btn sm">Sumar</button></form>`:""}</section>`}).join("")}
+  ${admin?`<section class="org"><span class="eyebrow">Panel de admins · blanqueo de PIN</span>
+    ${(()=>{const reqs=of("pin_reset").filter(r=>!r.data.done);return reqs.length?reqs.map(r=>`<div class="row between small"><span>🔑 <b>${esc(r.author)}</b> pidió blanquear su PIN · ${ago(r.created_at)}</span></div>`).join(""):`<p class="small muted">No hay pedidos pendientes.</p>`})()}
+    <form class="fgrid" data-form="pinreset"><select id="pr-n" name="name" aria-label="A quién" required>${personOpts((of("pin_reset").filter(r=>!r.data.done)[0]||{}).author||"","Blanquear PIN de…",PEOPLE.filter(p=>PERFILES[p]))}</select>
+      <input class="pin" type="password" inputmode="numeric" maxlength="4" id="pr-pin" name="pin" placeholder="Tu PIN" aria-label="Tu PIN de admin" required><button class="btn sm">Blanquear</button></form>
+    <p class="small muted">Después de blanquearlo, esa persona vuelve a elegir su nombre y crea un PIN nuevo.</p></section>`:""}
+  <section class="sheet"><span class="eyebrow">Quién puede qué</span>
+    <div class="row between small"><span><b>Admins</b> (${SUPER.map(esc).join(", ")})</span><span>Todo</span></div>
+    <div class="row between small"><span><b>Comisión Creativa</b></span><span>Comunicados, cronograma, Awards, buzón, cargos</span></div>
+    <div class="row between small"><span><b>Comisión Económica</b></span><span>Comunicados</span></div>
+    <div class="row between small"><span><b>Green Team</b></span><span>Lo suyo</span></div>
+    <div class="row between small"><span><b>Sorteos de cuartos y equipos</b></span><span>Solo admins</span></div></section>
   <div class="grid2">${VACANTES.map(v=>{const ps=refs("postulacion",v.id);const ok=ps.filter(p=>p.data.status==="ok");const pend=ps.filter(p=>p.data.status!=="ok");const yo=ME&&ps.find(p=>p.author===ME.name);
     return `<section class="sheet com ${ok.length?"":"vac"}"><span class="eyebrow">${ok.length?"En funciones":"Cargo vacante"}</span><h3>${esc(v.name)}</h3><p class="muted small">${esc(v.mandate)}</p>
     ${ok.length?`<div class="names">${ok.map(p=>`<span class="name">${esc(emojiOf(p.author))} ${esc(p.author)}</span>`).join("")}</div>`:""}
@@ -1136,7 +1115,7 @@ comisiones(){
 
 function evHTML(e){
   if(e.fixed) return `<div class="ev fixed"><span class="t">${esc(e.time||"")}</span><div class="body"><span class="ttl">${esc(e.title)}</span><span class="muted small">${esc(e.desc)}</span></div></div>`;
-  const js=refs("join",e.id); const yo=ME&&js.find(j=>j.author===ME.name); const n=refs("comment",e.id).length; const org=ME&&isOrg(ME.name);
+  const js=refs("join",e.id); const yo=ME&&js.find(j=>j.author===ME.name); const n=refs("comment",e.id).length; const org=ME&&can("cronograma",ME.name);
   const pend=e.status==="pendiente";
   return `<div class="ev"><span class="t">${esc(e.time||"—")}</span><div class="body">
     <div class="row"><span class="ttl">${esc(e.title)}</span>${pend?`<span class="pill warn">propuesta · ${esc(e.dayLabel)}</span>`:""}</div>
@@ -1161,23 +1140,36 @@ setInterval(()=>{const el=$("#countdown");if(el)el.innerHTML=countdownHTML();},3
 /* ================= Modales ================= */
 function modal(html){ $("#overlay").innerHTML=`<div class="modal" data-act="close-bg"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`; }
 function closeModal(){ $("#overlay").innerHTML=""; if(PENDING) render(); }
-let pickName=null, pickEmoji=null;
-function loginModal(){ pickName=ME?ME.name:null; pickEmoji=null; paintLogin(); }
+let pickName=null, pickEmoji=null, pickSure=false, SWITCHING=false;
+function loginModal(){ pickName=ME?ME.name:null; pickEmoji=null; pickSure=false; SWITCHING=false; paintLogin(); }
 function paintLogin(){
-  const claimed=!!(pickName&&PERFILES[pickName]);
   const taken=new Set(Object.entries(PERFILES).filter(([n])=>n!==pickName).map(([,e])=>e));
-  modal(`<span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>¿Quién sos?</h3>
-    <p class="muted small">Cada nombre se reclama una sola vez con un PIN de 4 números. Después nadie más puede entrar como vos. 🔒 = ya reclamado.</p>
-    <div class="chips">${PEOPLE.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${PERFILES[p]?esc(PERFILES[p])+" ":""}${esc(p)}${PERFILES[p]?'<span class="lock">🔒</span>':""}</button>`).join("")}</div>
-    ${pickName?(claimed?`
+  const emojiChips=`<div class="chips emojis">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}" ${taken.has(e)?"disabled":""}>${e}</button>`).join("")}</div>`;
+  const head=`<div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:2px"><span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>${ME&&!SWITCHING?esc(emojiOf(ME.name))+" "+esc(ME.name):"¿Quién sos?"}</h3></div></div>`;
+  // Ya logueado: perfil (no se puede cambiar de usuario, salvo admins)
+  if(ME&&!SWITCHING){
+    modal(`${head}<p class="small">Tu sesión queda abierta en este celu para siempre. Nadie más puede usar tu nombre.</p>
+      <details><summary class="small">Cambiar mi escudo</summary><div class="stack" style="margin-top:8px">${emojiChips}
+        <div class="field"><label for="lg-pin">Tu PIN para confirmar</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
+        <div><button class="btn sm" data-act="login-ok">Guardar escudo</button></div></div></details>
+      <div class="row"><button class="btn ghost" data-act="close">Cerrar</button>${SUPER.includes(ME.name)?`<button class="link" data-act="switch">Cambiar de usuario (solo admins)</button>`:""}</div>
+      <p class="small" id="lg-err" style="color:var(--stamp)"></p>`); return;
+  }
+  const claimed=!!(pickName&&PERFILES[pickName]);
+  let step="";
+  if(pickName&&claimed) step=`
       <div class="field"><label for="lg-pin">PIN de ${esc(pickName)}</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
-      <details><summary class="small">Cambiar mi escudo</summary><div class="chips emojis" style="margin-top:8px">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}" ${taken.has(e)?"disabled":""}>${e}</button>`).join("")}</div></details>
-      <p class="muted small">¿Te olvidaste el PIN? Pedile a la organización que te lo resetee.</p>`
-    :`<span class="eyebrow">Primera vez · elegí tu escudo (es único)</span>
-      <div class="chips emojis">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}" ${taken.has(e)?"disabled":""}>${e}</button>`).join("")}</div>
-      <div class="fgrid"><div class="field"><label for="lg-pin">Inventá un PIN</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
-      <div class="field"><label for="lg-pin2">Repetilo</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin2" autocomplete="off"></div></div>`):""}
-    <div class="row"><button class="btn" data-act="login-ok" ${pickName?"":"disabled"}>${claimed?"Entrar":"Reclamar mi nombre"}</button>${ME?`<button class="btn ghost" data-act="close">Cancelar</button>`:""}${ME?`<button class="link danger" data-act="logout">Salir de este celu</button>`:""}</div>
+      <div class="row"><button class="btn" data-act="login-ok">Entrar</button><button class="link" data-act="forgot">¿Olvidaste tu PIN?</button></div>`;
+  else if(pickName&&!pickSure) step=`
+      <div class="org"><b>¿Seguro que sos ${esc(pickName)}?</b><span class="small">Una vez que lo reclamás queda atado a vos: nadie más puede usarlo y vos no te podés cambiar a otro nombre.</span>
+      <div class="row"><button class="btn sm" data-act="sure-yes">Sí, soy ${esc(pickName.split(" ")[0])}</button><button class="btn ghost sm" data-act="sure-no">No, me equivoqué</button></div></div>`;
+  else if(pickName) step=`<span class="eyebrow">Elegí tu escudo (es único)</span>${emojiChips}
+      <div class="fgrid"><div class="field"><label for="lg-pin">Inventá un PIN de 4 números</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
+      <div class="field"><label for="lg-pin2">Repetilo</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin2" autocomplete="off"></div></div>
+      <div><button class="btn" data-act="login-ok">Reclamar mi nombre</button></div>`;
+  modal(`${head}<p class="muted small">Cada nombre se reclama una sola vez con un PIN. 🔒 = ya reclamado.</p>
+    ${[["Se alojan en la mansión",CASA],["Viven en Bariloche",LOCALES]].map(([t,list])=>`<span class="eyebrow">${t}</span><div class="chips">${list.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${PERFILES[p]?esc(PERFILES[p])+" ":""}${esc(p)}${PERFILES[p]?'<span class="lock">🔒</span>':""}</button>`).join("")}</div>`).join("")}
+    ${step}${SWITCHING?`<div><button class="btn ghost sm" data-act="close">Cancelar</button></div>`:""}
     <p class="small" id="lg-err" style="color:var(--stamp)"></p>`);
 }
 function notifModal(){
@@ -1210,10 +1202,10 @@ async function sharePhoto(p){
 }
 
 /* ---- Sorteo animado ---- */
-async function playReveal(){
-  const cfg=roomsCfg(); if(!cfg.drawnAt) return; REVEAL=true;
-  if(TAB!=="cuartos"){TAB="cuartos";render();}
-  const els=[...document.querySelectorAll("#rooms .name")]; els.forEach(e=>e.classList.add("hid"));
+async function playReveal(which){
+  which=which||"rooms"; const tab=which==="teams"?"equipos":"cuartos"; REVEAL=true;
+  if(TAB!==tab){TAB=tab;render();}
+  const els=[...document.querySelectorAll("#"+which+" .name")]; els.forEach(e=>e.classList.add("hid"));
   for(const e of shuffle(els)){ await new Promise(r=>setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?40:350)); e.classList.remove("hid"); }
   REVEAL=null;
 }
@@ -1225,8 +1217,8 @@ function resize(file,max){return new Promise((ok,ko)=>{const img=new Image();img
 function needMe(){ if(!ME){ loginModal(); return false;} return true; }
 document.addEventListener("click", async ev=>{
   const tabBtn=ev.target.closest("[data-tab]");
-  if(tabBtn){ TAB=tabBtn.dataset.tab; try{history.replaceState(null,"","#"+TAB)}catch(e){} render(); window.scrollTo({top:0}); return; }
-  const pk=ev.target.closest("[data-pick]"); if(pk){ pickName=pk.dataset.pick; pickEmoji=null; paintLogin(); setTimeout(()=>$("#lg-pin")?.focus(),30); return; }
+  if(tabBtn){ TAB=tabBtn.dataset.tab; MORE_OPEN=false; try{history.replaceState(null,"","#"+TAB)}catch(e){} render(); window.scrollTo({top:0}); return; }
+  const pk=ev.target.closest("[data-pick]"); if(pk){ pickName=pk.dataset.pick; pickEmoji=null; pickSure=false; paintLogin(); setTimeout(()=>$("#lg-pin")?.focus(),30); return; }
   const em=ev.target.closest("[data-emoji]"); if(em){ pickEmoji=em.dataset.emoji; document.querySelectorAll("[data-emoji]").forEach(b=>b.setAttribute("aria-pressed",b===em)); return; }
   const a=ev.target.closest("[data-act]"); if(!a) return;
   const act=a.dataset.act, id=a.dataset.id;
@@ -1241,7 +1233,11 @@ document.addEventListener("click", async ev=>{
     case "wx-r": { const t=$("#wxtrack"); t.scrollBy({left:t.clientWidth*.8,behavior:"smooth"}); break; }
     case "tr": $("#tabs").scrollBy({left:220,behavior:"smooth"}); break;
     case "login": loginModal(); break;
-    case "logout": ME=null; lsSet("pibex_me2",null); closeModal(); render(); loginModal(); break;
+    case "switch": if(ME&&SUPER.includes(ME.name)){ SWITCHING=true; pickName=null; pickSure=false; paintLogin(); } break;
+    case "sure-yes": pickSure=true; paintLogin(); break;
+    case "sure-no": pickName=null; pickSure=false; paintLogin(); break;
+    case "forgot": { if(!pickName) break; const ya=of("pin_reset").some(r=>r.author===pickName&&!r.data.done); if(!ya) await Store.add("pin_reset",{name:pickName},pickName);
+      $("#lg-err").textContent="Listo: los admins (Ballve, Donovan o Fermín) te lo blanquean. Después volvé a entrar, elegí tu nombre e inventá un PIN nuevo."; break; }
     case "notif": await pushRefresh(); notifModal(); break;
     case "push-on": if(!needMe())return; a.disabled=true; if(await pushEnable()){ toast("Avisos activados"); notifModal(); } else a.disabled=false; break;
     case "push-off": await pushDisable(); toast("Avisos desactivados"); notifModal(); break;
@@ -1252,7 +1248,7 @@ document.addEventListener("click", async ev=>{
     case "close": closeModal(); break;
     case "refresh": render(); break;
     case "login-ok": {
-      const err=$("#lg-err"); const pin=($("#lg-pin")?.value||"").trim();
+      const err=$("#lg-err"); const pin=($("#lg-pin")?.value||"").trim(); if(ME&&!SWITCHING) pickName=ME.name;
       if(!/^\d{4}$/.test(pin)){ err.textContent="El PIN tiene que ser de 4 números."; return; }
       a.disabled=true;
       if(PERFILES[pickName]){
@@ -1267,7 +1263,7 @@ document.addEventListener("click", async ev=>{
         if(r==="taken"){ err.textContent="Alguien reclamó ese nombre recién. Si no fuiste vos, avisale a la organización."; await Auth.list(); paintLogin(); return; }
         if(r==="emoji"){ err.textContent="Ese escudo ya lo tiene otro."; await Auth.list(); a.disabled=false; return; }
       }
-      await Auth.list(); ME={name:pickName}; lsSet("pibex_me2",ME);
+      await Auth.list(); ME={name:pickName}; lsSet("pibex_me2",ME); SWITCHING=false;
       try{ const sub=await pushSub(); if(sub) await sb.rpc("pibex_push_sub",{p_sub:sub.toJSON(),p_name:ME.name}); }catch(e){} closeModal(); render(); toast("Adentro, "+ME.name); break; }
     case "open": OPEN.add(id); render(); break;
     case "toggle": OPEN.has("ev"+id)?OPEN.delete("ev"+id):OPEN.add("ev"+id); render(); break;
@@ -1286,11 +1282,16 @@ document.addEventListener("click", async ev=>{
     case "aw-hide": await saveAwards({phase:"hidden"}); render(); break;
     case "aw-reopen": await saveAwards({phase:"voting"}); render(); break;
     case "roomdel": { const cfg=roomsCfg(); await saveRooms({rooms:cfg.rooms.filter(r=>r.id!==id)}); render(); break; }
-    case "rm-draw": { ARM=null; const cfg=roomsCfg(); const slots=[]; cfg.rooms.forEach(r=>{for(let i=0;i<r.cap;i++)slots.push(r.id)}); const ppl=shuffle(PEOPLE); const assign={}; ppl.forEach((p,i)=>{if(slots[i])assign[p]=slots[i]});
-      // mezclar slots para que no se llenen siempre los primeros cuartos cuando sobran camas
-      const mixed=shuffle(slots).slice(0,ppl.length); ppl.forEach((p,i)=>{assign[p]=mixed[i]||undefined; if(!assign[p]) delete assign[p];});
-      await saveRooms({assign,drawnAt:new Date().toISOString(),drawnBy:ME.name}); notify("🛏️ ¡Se sortearon los cuartos!","Entrá a ver con quién dormís."); render(); playReveal(); break; }
-    case "replay": playReveal(); break;
+    case "rm-draw": { ARM=null; if(!can("cuartos",ME.name)) break; const cfg=roomsCfg(); const draws=(cfg.draws||(cfg.drawnAt?1:0)); if(draws>=MAX_DRAWS) break;
+      const slots=[]; cfg.rooms.forEach(r=>{for(let k=0;k<r.cap;k++)slots.push(r.id)}); const mixed=shuffle(slots); const assign={}; shuffle(CASA).forEach((p,k)=>{ if(mixed[k]) assign[p]=mixed[k]; });
+      await saveRooms({assign,drawnAt:new Date().toISOString(),drawnBy:ME.name,draws:draws+1}); notify("🛏️ ¡Se sortearon los cuartos!","Entrá a ver con quién dormís."); render(); playReveal("rooms"); break; }
+    case "rm-reopen": if(SUPER.includes(ME.name)){ await saveRooms({draws:0}); render(); } break;
+    case "tm-draw": { ARM=null; if(!can("equipos",ME.name)) break; const cfg=teamsCfg(); const draws=(cfg.draws||(cfg.drawnAt?1:0)); if(draws>=MAX_DRAWS) break; const assign={}; shuffle(CASA).forEach((p,k)=>{ assign[p]=k%cfg.count; });
+      await saveTeams({assign,drawnAt:new Date().toISOString(),drawnBy:ME.name,draws:draws+1}); notify("🍳 ¡Se sortearon los equipos de cocina!","Entrá a ver qué noche te toca."); render(); playReveal("teams"); break; }
+    case "tm-reopen": if(SUPER.includes(ME.name)){ await saveTeams({draws:0}); render(); } break;
+    case "com-rm": { if(!SUPER.includes(ME.name)) break; const [k,n]=id.split("|"); const cfg=comCfg(); await saveCom({[k]:(cfg[k]||[]).filter(x=>x!==n)}); render(); break; }
+    case "more": MORE_OPEN=!MORE_OPEN; renderTabs(); break;
+    case "replay": playReveal(id); break;
     case "photo": photoModal(id); break;
     case "psort": PHOTO_SORT=id; render(); break;
     case "like": { if(!needMe())return; const yo=likes(id).find(l=>l.author===ME.name); if(yo) await Store.remove(yo.id); else await Store.add("like",{ref:id}); photoModal(id); break; }
@@ -1298,6 +1299,12 @@ document.addEventListener("click", async ev=>{
     case "copy": { const t=a.dataset.text; try{ await navigator.clipboard.writeText(t); toast("Copiado: "+t);}catch(e){ const c=a.previousElementSibling; if(c){const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r);} toast("Seleccionado, copialo a mano"); } break; }
   }}catch(e){ console.error(e); toast("No se pudo guardar. Revisá la conexión."); a.disabled=false; }
 });
+function trucoSync(){
+  const ids=["t-a1","t-a2","t-b1","t-b2"]; const sels=ids.map(i=>document.getElementById(i)); if(sels.some(x=>!x)) return;
+  sels.forEach((sel,si)=>{ [...sel.options].forEach(o=>{ if(!o.value) return; const other=sels.findIndex((x,xi)=>xi!==si&&x.value===o.value);
+    o.disabled=other>=0; o.textContent=o.value+(other>=0?(other<2?" (en pareja 1)":" (en pareja 2)"):""); }); });
+}
+document.addEventListener("change", ev=>{ if(ev.target.id&&/^t-[ab][12]$/.test(ev.target.id)) trucoSync(); });
 document.addEventListener("change", async ev=>{
   const s=ev.target.closest("[data-vote]"); if(!s) return; if(!needMe()) return;
   try{ const prev=myVote(s.dataset.vote); if(prev) await Store.remove(prev.id); if(s.value) await Store.add("vote",{cat:s.dataset.vote,nominee:s.value}); toast(s.value?"Voto registrado":"Voto retirado"); render(); }catch(e){ toast("No se pudo votar"); }
@@ -1305,7 +1312,7 @@ document.addEventListener("change", async ev=>{
 document.addEventListener("submit", async ev=>{
   const f=ev.target.closest("[data-form]"); if(!f) return; ev.preventDefault(); if(!needMe()) return;
   const d=Object.fromEntries(new FormData(f)); const kind=f.dataset.form; const btn=f.querySelector("button"); if(btn) btn.disabled=true;
-  const org=isOrg(ME.name);
+  const org=isOrg(ME.name); const C=a=>can(a,ME.name);
   try{
     switch(kind){
       case "edit": { const it=ITEMS.find(i=>i.id===f.dataset.id); if(!it||it.author!==ME.name) break; const t=d.text.trim(); if(t&&t!==it.data.text) await Store.update(it.id,{text:t,edited:new Date().toISOString()}); EDIT=null; break; }
@@ -1313,9 +1320,9 @@ document.addEventListener("submit", async ev=>{
         await Store.add("comment",{ref,text:t,...(au||{})}); OPEN.add(ref); notify("💬 "+ME.name+" comentó",t||"🎙️ Mandó un audio"); break; }
       case "post": { const t=(d.text||"").trim(); if(REC&&REC.mr){ toast("Pará la grabación primero"); break; } const au=await takeAudio("post"); if(!t&&!au){ toast("Escribí algo o grabá un audio"); break; }
         await Store.add("post",{text:t,...(au||{})}); notify("📢 "+ME.name+" en el Muro",t||"🎙️ Mandó un audio"); break; }
-      case "comunicado": { if(!org) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
-      case "event": { const st=org?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:org?ME.name:undefined});
-        notify(org?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(org?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
+      case "comunicado": { if(!C("comunicado")) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
+      case "event": { const ok=C("cronograma"); const st=ok?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:ok?ME.name:undefined});
+        notify(ok?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(ok?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
       case "truco": {
         const p1=[d.a1,d.a2], p2=[d.b1,d.b2]; const all=[...p1,...p2];
         if(all.some(x=>!x)||new Set(all).size<4){ toast("Elegí 4 jugadores distintos"); break; }
@@ -1325,8 +1332,15 @@ document.addEventListener("submit", async ev=>{
       case "pago": if(!isIn("economica",ME.name)) break; await Store.add("pago",{person:d.person,concept:d.concept,amount:+d.amount}); toast("Pago registrado"); break;
       case "place": await Store.add("place",{name:d.name.trim(),note:d.note.trim()}); break;
       case "sorpresa": await Store.add("sorpresa",{text:d.text.trim(),day:d.day}); toast("Enviado a la Comisión"); break;
-      case "room": { if(!org) break; const cfg=roomsCfg(); await saveRooms({rooms:[...cfg.rooms,{id:"r"+uid(),name:d.name.trim(),cap:Math.max(1,+d.cap)}]}); break; }
-      case "swap": { if(!org) break; if(!d.a||!d.b||d.a===d.b){ toast("Elegí dos personas distintas"); break; } const cfg=roomsCfg(); const as={...cfg.assign}; const t=as[d.a]; if(as[d.b]) as[d.a]=as[d.b]; else delete as[d.a]; if(t) as[d.b]=t; else delete as[d.b]; await saveRooms({assign:as}); toast("Intercambiados"); break; }
+      case "room": { if(!C("cuartos")) break; const cfg=roomsCfg(); await saveRooms({rooms:[...cfg.rooms,{id:"r"+uid(),name:d.name.trim(),cap:Math.max(1,+d.cap)}]}); break; }
+      case "teams": { if(!C("equipos")) break; const cfg=teamsCfg(); const count=cfg.drawnAt?cfg.count:Math.max(2,Math.min(7,+(d.count||cfg.count))); const names=[...Array(count)].map((_,k)=>(d["name"+k]||"").trim()||cfg.names[k]||TEAM_NAMES[k]||"Equipo "+(k+1)); await saveTeams({count,names}); toast("Equipos guardados"); break; }
+      case "tswap": { if(!C("equipos")) break; if(!d.a||!d.b||d.a===d.b){ toast("Elegí dos personas distintas"); break; } const cfg=teamsCfg(); const as={...cfg.assign}; [as[d.a],as[d.b]]=[as[d.b],as[d.a]]; await saveTeams({assign:as}); toast("Intercambiados"); break; }
+      case "pinreset": { if(!SUPER.includes(ME.name)||!d.name) break; const r=await Auth.reset(ME.name,(d.pin||"").trim(),d.name);
+        if(r==="bad"){ toast("Tu PIN de admin no es correcto"); if(btn) btn.disabled=false; return; } if(r!=="ok"){ toast("No se pudo blanquear ("+r+")"); break; }
+        for(const q of of("pin_reset").filter(x=>x.author===d.name&&!x.data.done)) await Store.update(q.id,{done:true,by:ME.name});
+        await Auth.list(); toast("PIN de "+d.name+" blanqueado"); break; }
+      case "com-add": { if(!SUPER.includes(ME.name)||!d.person) break; const k=f.dataset.key; const cfg=comCfg(); await saveCom({[k]:[...(cfg[k]||[]),d.person]}); break; }
+      case "swap": { if(!C("cuartos")) break; if(!d.a||!d.b||d.a===d.b){ toast("Elegí dos personas distintas"); break; } const cfg=roomsCfg(); const as={...cfg.assign}; const t=as[d.a]; if(as[d.b]) as[d.a]=as[d.b]; else delete as[d.a]; if(t) as[d.b]=t; else delete as[d.b]; await saveRooms({assign:as}); toast("Intercambiados"); break; }
       case "photo": {
         const files=[...f.querySelector("input[type=file]").files]; const st=$("#ph-status"); let ok=0, skip=0;
         for(const file of files){
@@ -1353,7 +1367,7 @@ window.addEventListener("hashchange",()=>{const t=location.hash.slice(1); if(TAB
   render();
   lsSet("pibex_seen", Date.now());
   try{ await Store.init(); }catch(e){ console.error(e); toast("No se pudo conectar con la base de datos"); }
-  if(ME && !PERFILES[ME.name] && !AUTH_ERR){ ME=null; }
+  if(ME && (!PEOPLE.includes(ME.name) || (!PERFILES[ME.name] && !AUTH_ERR))){ ME=null; lsSet("pibex_me2",null); }
   render();
   pushRefresh();
   if(!ME && !AUTH_ERR) loginModal();
