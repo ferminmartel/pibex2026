@@ -290,6 +290,20 @@ tr.me td{background:var(--lake-soft)}
 .wxscroll{overflow-x:auto;margin-inline:-4px;padding:4px}
 .wxscroll .wx{display:grid;grid-auto-flow:column;grid-auto-columns:84px;grid-template-columns:none}
 .wx div.trip{border:2px solid var(--gold);background:var(--gold-soft)}
+#wx{min-width:0;display:grid;gap:10px}
+.sheet>*{min-width:0}
+.wxnow{grid-template-columns:auto 1fr}
+.carousel{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) 32px;gap:6px;align-items:center;min-width:0}
+.wxtrack{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;scroll-behavior:smooth;min-width:0}
+.wxtrack::-webkit-scrollbar{display:none}
+.wxday{flex:0 0 82px;scroll-snap-align:start;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;display:grid;gap:2px;font-size:.8rem}
+.wxday b{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.wxday .e{font-size:1.3rem;line-height:1.1}
+.wxday .tmp{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wxday.trip{border:2px solid var(--gold);background:var(--gold-soft)}
+.carr{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);color:var(--ink);cursor:pointer;font-size:1.2rem;line-height:1;display:grid;place-items:center;padding:0}
+.carr:hover:not(:disabled){border-color:var(--ink)}
+.carr:disabled{opacity:.3;cursor:default}
 
 /* ---- Identidad oficial PIBEX 2026: azul marino + crema del escudo, ámbar cervecero como acento ---- */
 :root{
@@ -394,8 +408,7 @@ const CONFIG = {
   SUPABASE_URL: "https://qwzgqxzfvldhsenjgbaw.supabase.co",
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emdxeHpmdmxkaHNlbmpnYmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTczMjAsImV4cCI6MjEwNzQ3MzMyMH0.VEc-4oKOFXbt_yB2HHyfYeVee5Rtxgt-0jkrWzJ13M4",
   MANSION: "San Carlos de Bariloche",
-  VAPID_PUBLIC: "BFvl5FRxltZ4uRVtaTOu8Y5v9SVWxTV8Gsg_21EbJ7e-TFMXH9VV5HKvYxcoeq6LV3SZ3auVwBVOXZyZD4phcs0",   // clave pública para avisos push
-  ACCUWEATHER: "https://www.accuweather.com/es/ar/san-carlos-de-bariloche/5857/weather-forecast/5857"
+  VAPID_PUBLIC: "BFvl5FRxltZ4uRVtaTOu8Y5v9SVWxTV8Gsg_21EbJ7e-TFMXH9VV5HKvYxcoeq6LV3SZ3auVwBVOXZyZD4phcs0"   // clave pública para avisos push
 };
 
 /* ================= Datos base ================= */
@@ -618,7 +631,9 @@ async function pushEnable(){
   const reg=await navigator.serviceWorker.register("sw.js"); await navigator.serviceWorker.ready;
   const perm=await Notification.requestPermission();
   if(perm!=="granted"){ toast("No diste permiso. Se habilita desde los ajustes del navegador."); return false; }
-  const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(CONFIG.VAPID_PUBLIC)});
+  let sub;
+  try{ sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(CONFIG.VAPID_PUBLIC)}); }
+  catch(e){ console.error(e); const brave=!!(navigator.brave); toast(brave?"Brave bloquea los avisos: activá «Usar servicios de Google para mensajes push» en brave://settings/privacy":"Tu navegador no dejó activar los avisos. Probá con Chrome."); return false; }
   const {error}=await sb.rpc("pibex_push_sub",{p_sub:sub.toJSON(),p_name:ME?ME.name:null}); if(error) throw error;
   PUSH_ON=true; paintBell(); return true;
 }
@@ -762,15 +777,17 @@ async function loadWeather(){
 }
 function paintWeather(){
   const el=$("#wx"); if(!el||!WX) return;
-  const link=`<a class="btn ghost sm" href="${esc(CONFIG.ACCUWEATHER)}" target="_blank" rel="noopener">Ver en AccuWeather ↗</a>`;
-  if(WX.err){ el.innerHTML=`<div class="row between"><p class="muted small">No se pudo cargar el clima.</p>${link}</div>`; return; }
+  if(WX.err){ el.innerHTML=`<p class="muted small">No se pudo cargar el clima. Probá recargar en un rato.</p>`; return; }
   const c=WX.current, d=WX.daily; const [e,t]=WMO(c.weather_code);
-  const tripDays=d.time.filter(x=>x>="2026-10-24"&&x<="2026-10-31");
-  const shown=d.time.map((x,i)=>i).filter(i=>i<7 || (d.time[i]>="2026-10-24"&&d.time[i]<="2026-10-31"));
+  const tripDays=d.time.filter(x=>x>="2026-10-24"&&x<="2026-10-31").length;
   const short=x=>{const dt=new Date(x+"T12:00:00-03:00");return ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][dt.getDay()]+" "+x.slice(8)};
-  el.innerHTML=`<div class="wxnow"><span class="e">${e}</span><div><div class="big">${Math.round(c.temperature_2m)}°</div><div class="small">${t} · sensación ${Math.round(c.apparent_temperature)}°</div><div class="muted small">Viento ${Math.round(c.wind_speed_10m)} km/h · humedad ${c.relative_humidity_2m}%</div></div>${link}</div>
-  <div class="wxscroll"><div class="wx">${shown.map(i=>{const [ee,tt]=WMO(d.weather_code[i]);const trip=d.time[i]>="2026-10-24";return `<div class="${trip?"trip":""}" title="${tt}"><b>${short(d.time[i])}</b><span class="e">${ee}</span><span class="tmp">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</span><span class="muted">💧${d.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div></div>
-  <p class="muted small">${tripDays.length?`Recuadrados: días del viaje con pronóstico (${tripDays.length} de 8). El resto aparece a medida que se acerca la fecha.`:"Los días del viaje aparecen recuadrados a partir del 15/10."} Fuente: Open-Meteo.</p>`;
+  el.innerHTML=`<div class="wxnow"><span class="e">${e}</span><div><div class="big">${Math.round(c.temperature_2m)}°</div><div class="small">${t} · sensación ${Math.round(c.apparent_temperature)}°</div><div class="muted small">Viento ${Math.round(c.wind_speed_10m)} km/h · humedad ${c.relative_humidity_2m}%</div></div></div>
+  <div class="carousel"><button class="carr l" data-act="wx-l" aria-label="Días anteriores">‹</button>
+    <div class="wxtrack" id="wxtrack">${d.time.map((x,i)=>{const [ee,tt]=WMO(d.weather_code[i]);const trip=x>="2026-10-24"&&x<="2026-10-31";return `<div class="wxday ${trip?"trip":""}" title="${tt}"><b>${short(x)}</b><span class="e">${ee}</span><span class="tmp">${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</span><span class="muted">💧${d.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div>
+    <button class="carr r" data-act="wx-r" aria-label="Días siguientes">›</button></div>
+  <p class="muted small">${tripDays?`Recuadrados: días del viaje (${tripDays} de 8 con pronóstico). El resto aparece a medida que se acerca la fecha.`:"Los días del viaje aparecen recuadrados a medida que entran en el pronóstico."}</p>`;
+  const tr=$("#wxtrack"); const upd=()=>{ $("[data-act=wx-l]").disabled=tr.scrollLeft<=2; $("[data-act=wx-r]").disabled=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-2; };
+  tr.addEventListener("scroll",upd,{passive:true}); upd();
 }
 
 /* ================= Vistas ================= */
@@ -1146,6 +1163,8 @@ document.addEventListener("click", async ev=>{
   try{
   switch(act){
     case "tl": $("#tabs").scrollBy({left:-220,behavior:"smooth"}); break;
+    case "wx-l": { const t=$("#wxtrack"); t.scrollBy({left:-t.clientWidth*.8,behavior:"smooth"}); break; }
+    case "wx-r": { const t=$("#wxtrack"); t.scrollBy({left:t.clientWidth*.8,behavior:"smooth"}); break; }
     case "tr": $("#tabs").scrollBy({left:220,behavior:"smooth"}); break;
     case "login": loginModal(); break;
     case "logout": ME=null; lsSet("pibex_me2",null); closeModal(); render(); loginModal(); break;
