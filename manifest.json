@@ -1,0 +1,16 @@
+{
+ "name": "PIBEX 2026",
+ "short_name": "PIBEX",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#172B42",
+ "theme_color": "#172B42",
+ "icons": [
+  {
+   "src": "icon.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}

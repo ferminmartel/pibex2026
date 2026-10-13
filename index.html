@@ -4,14 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#172B42">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PIBEX">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
 <body>
 <title>PIBEX 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;0,6..96,800;1,6..96,500&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Serif+4:ital,wght@1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
 <style>
+
 /* Layout: a "Boletín Oficial" for a made-up Patagonian bureaucracy — masthead + sticky tab rail + one column of official sheets. */
 :root{
   --paper:#E9EEE9; --sheet:#F7FAF6; --ink:#17212A; --muted:#58666E; --line:#C5CFC9;
@@ -219,49 +228,177 @@ tr.me td{background:var(--lake-soft)}
 .feed .it:last-child{border-bottom:0}
 .empty{color:var(--muted);font-style:italic;font-size:.9rem}
 @media (prefers-reduced-motion:no-preference){ main>*{animation:rise .35s ease both} @keyframes rise{from{transform:translateY(6px)}to{transform:none}} }
+
+/* ---- v2 ---- */
+.tabs{position:sticky}
+.tabs-box{position:relative;max-width:860px;margin:0 auto}
+.tabs-in{padding-inline:28px}
+.tabarrow{position:absolute;top:0;bottom:1px;width:34px;border:0;cursor:pointer;color:var(--ink);font-size:1.3rem;line-height:1;display:grid;place-items:center;z-index:2;padding:0}
+.tabarrow.l{left:-6px;background:linear-gradient(90deg,var(--paper) 55%,transparent)}
+.tabarrow.r{right:-6px;background:linear-gradient(270deg,var(--paper) 55%,transparent)}
+.tabarrow:disabled{opacity:.18;cursor:default}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px;align-content:start;text-align:left;cursor:pointer;min-width:0}
+.tile:hover{border-color:var(--ink)}
+.tile .big{font-size:1.9rem}
+.tile .lbl{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tile .sub{font-size:.78rem;color:var(--muted);overflow-wrap:anywhere}
+.wx{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}
+.wx div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:6px;text-align:center;display:grid;gap:2px;font-size:.8rem}
+.wx b{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.wx .e{font-size:1.3rem;line-height:1.1}
+.wx .tmp{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.sealed{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sealed div{height:86px;border-radius:var(--r);border:1px dashed var(--line);background:repeating-linear-gradient(135deg,var(--sheet),var(--sheet) 8px,var(--paper) 8px,var(--paper) 16px);display:grid;place-items:center;font-family:var(--f-display);font-size:2rem;color:var(--muted)}
+.rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.room{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:8px;align-content:start}
+.room.mine{border:2px solid var(--stamp)}
+.room h3{font-size:1.2rem}
+.room .names .name.hid{visibility:hidden}
+.room .names .name.me{background:var(--stamp-soft);border-color:var(--stamp);color:var(--stamp)}
+.ph .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:2rem;text-shadow:0 2px 8px rgba(0,0,0,.6);background:none;padding:0}
+.ph video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.ph .lk{position:absolute;top:6px;right:6px;left:auto;bottom:auto;background:rgba(0,0,0,.55);border-radius:999px;padding:1px 7px;font-size:.72rem}
+.lb video{max-height:74vh;max-width:100%;margin:0 auto;border-radius:4px;background:#000}
+.lb .acts{display:flex;gap:8px;flex-wrap:wrap}
+.lb .btn{background:#fff;color:#111;border-color:#fff}
+.lb .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.pin{font-family:var(--f-mono);letter-spacing:.5em;font-size:1.3rem;text-align:center;max-width:180px}
+.chipbtn:disabled{opacity:.3;cursor:not-allowed}
+.chipbtn .lock{font-size:.7rem;margin-left:4px;opacity:.7}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:none;padding:5px 12px;cursor:pointer;font-size:.8rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.fact{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:3px}
+.fact .lbl{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fact b{font-family:var(--f-display);font-size:1.15rem}
+.org{border:1px solid var(--gold);background:var(--gold-soft);border-radius:var(--r);padding:14px;display:grid;gap:10px}
+.org>.eyebrow{color:var(--gold)}
+.catedit{display:flex;gap:6px;align-items:center}
+.catedit input{flex:1;min-width:0}
+.thumb{width:100%;aspect-ratio:4/3;max-width:100%;object-fit:cover;border-radius:4px;display:block;background:var(--line)}
+.tab{position:relative}
+.tab .dot{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;margin-left:5px;border-radius:999px;background:var(--stamp);color:#fff;font-size:.62rem;letter-spacing:0;vertical-align:1px}
+
+/* ---- Identidad oficial PIBEX 2026: azul marino + crema del escudo, ámbar cervecero como acento ---- */
+:root{
+  --brand:#172B42; --brand-2:#22395A; --cream:#FBF5E4; --cream-dim:rgba(251,245,228,.68);
+  --paper:#F3EDDD; --sheet:#FFFBF1; --ink:#172B42; --muted:#5D6878; --line:#DCD3BE;
+  --lake:#2B5C8C; --pine:#2F6B4F; --stamp:#B8402F; --gold:#B47B1E;
+  --lake-soft:#DFE7F0; --pine-soft:#DCEADF; --stamp-soft:#F6DED7; --gold-soft:#F5E6C6;
+  --f-display:"Montserrat", "Gotham", "Avenir Next", system-ui, sans-serif;
+  --f-verse:"Source Serif 4", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0F1C2C; --sheet:#172B42; --ink:#FBF5E4; --muted:#A6B0BE; --line:#2A4262;
+  --lake:#9CC3E8; --pine:#8CCBA8; --stamp:#F08A78; --gold:#E9B65C;
+  --lake-soft:#1F3A58; --pine-soft:#1C3A30; --stamp-soft:#432826; --gold-soft:#3B3220; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0F1C2C; --sheet:#172B42; --ink:#FBF5E4; --muted:#A6B0BE; --line:#2A4262;
+  --lake:#9CC3E8; --pine:#8CCBA8; --stamp:#F08A78; --gold:#E9B65C;
+  --lake-soft:#1F3A58; --pine-soft:#1C3A30; --stamp-soft:#432826; --gold-soft:#3B3220; color-scheme:dark }
+
+h1,h2,h3,h4{font-family:var(--f-display);letter-spacing:-.01em}
+h2{font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:clamp(1.5rem,4.2vw,2rem)}
+h3{font-weight:700}
+.eyebrow{font-family:var(--f-display);font-weight:700;font-size:.68rem;letter-spacing:.16em}
+.big,.count .n,.arr .t{font-family:var(--f-display);font-weight:800}
+
+/* Banda institucional */
+.mast{background:var(--brand);color:var(--cream);margin-inline:-16px;padding:22px 16px 18px;border-bottom:0;display:block;position:relative;overflow:hidden}
+.mast::after{content:"";position:absolute;right:-90px;bottom:-140px;width:360px;height:360px;background:url(logo.png) center/contain no-repeat;opacity:.06;pointer-events:none}
+.mast-in{max-width:860px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:'logo txt tools' 'logo verse tools';column-gap:22px;row-gap:8px;align-items:center;position:relative;z-index:1}
+.mast .logo{grid-area:logo}.mast-txt{grid-area:txt;align-self:end}.verse{grid-area:verse;align-self:start}
+.mast .logo{width:128px;height:128px;border-radius:50%;box-shadow:0 0 0 3px var(--brand),0 0 0 4px rgba(251,245,228,.25)}
+.mast-txt{display:grid;gap:6px;min-width:0}
+.mast .eyebrow{color:var(--cream-dim)}
+.mast h1{font-family:var(--f-display);font-weight:800;font-size:clamp(2rem,7vw,3.4rem);letter-spacing:.04em;line-height:1;color:var(--cream)}
+.mast h1 span{display:block;font-size:.42em;letter-spacing:.32em;font-weight:700;margin-top:6px;color:var(--cream-dim)}
+.verse{font-family:var(--f-verse);font-style:italic;font-size:1rem;line-height:1.5;color:var(--cream);opacity:.9;max-width:44ch}
+.mast-tools{grid-area:tools;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-self:start}
+.mast .iconbtn{background:transparent;color:var(--cream);border-color:rgba(251,245,228,.35)}
+.mast .iconbtn:hover{border-color:var(--cream);background:var(--brand-2)}
+@media (max-width:560px){
+  .mast-in{grid-template-columns:84px 1fr;grid-template-areas:'logo txt' 'verse verse' 'tools tools';column-gap:12px;row-gap:10px}
+  .mast .logo{width:84px;height:84px}
+  .verse{font-size:.86rem}
+  .mast-tools{justify-content:flex-start}
+}
+
+/* Menú sobre la banda */
+.tabs{background:var(--brand);border-bottom:0;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+.tab{color:var(--cream-dim);font-family:var(--f-display);font-weight:700;font-size:.72rem;letter-spacing:.12em}
+.tab:hover{color:var(--cream)}
+.tab[aria-current="page"]{color:var(--cream);border-bottom-color:#E9B65C}
+.tabarrow{color:var(--cream)}
+.tabarrow.l{background:linear-gradient(90deg,var(--brand) 55%,transparent)}
+.tabarrow.r{background:linear-gradient(270deg,var(--brand) 55%,transparent)}
+.tab .dot{background:#E9B65C;color:var(--brand)}
+
+/* Hojas oficiales con el sello */
+.sheet.official{border-top:4px solid var(--brand)}
+:root[data-theme="dark"] .sheet.official{border-top-color:var(--gold)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sheet.official{border-top-color:var(--gold)} }
+.doc .num{color:var(--gold);font-family:var(--f-display);font-weight:700}
+.doc h3{font-size:1.45rem}
+.doc .sign{font-family:var(--f-verse)}
+.seal{width:54px;height:54px;border-radius:50%;flex:none}
+.dochead{display:flex;gap:14px;align-items:center}
+.btn{background:var(--brand);border-color:var(--brand);color:var(--cream)}
+.btn:hover{background:var(--brand-2);border-color:var(--brand-2)}
+.btn.ghost{color:var(--ink);border-color:var(--ink)}
+:root[data-theme="dark"] .btn:not(.ghost):not(.red){background:var(--cream);color:var(--brand);border-color:var(--cream)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn:not(.ghost):not(.red){background:var(--cream);color:var(--brand);border-color:var(--cream)} }
+.bar i{background:var(--gold)}
+.res .r i{background:var(--gold)}
+.room.mine{border-color:var(--gold)}
+.room .names .name.me{background:var(--gold-soft);border-color:var(--gold);color:var(--ink)}
+.chipbtn[aria-pressed="true"]{background:var(--brand);color:var(--cream);border-color:var(--brand)}
+.sealed div{font-family:var(--f-display);font-weight:800}
+.foot{display:grid;justify-items:center;gap:8px;padding-block:28px 8px;color:var(--muted);text-align:center}
+.foot img{width:44px;height:44px;border-radius:50%;opacity:.9}
+.foot p{font-family:var(--f-verse);font-style:italic}
+.foot span{font-family:var(--f-display);font-weight:700;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase}
+
 </style>
 
-<div class="wrap">
-  <header class="mast">
-    <div class="mast-top">
-      <span class="eyebrow">Boletín Oficial · República de los Pibes</span>
-      <div class="me-chip">
-        <button class="iconbtn" data-act="notif" aria-label="Notificaciones">🔔 Avisos</button>
-        <button class="iconbtn" data-act="login" id="mebtn">Entrar</button>
-      </div>
-    </div>
-    <h1>PIBEX <em>2026</em></h1>
-    <div class="sub"><span>Bariloche · Río Negro</span><span>24 → 31 oct</span><span>22 integrantes · 1 mansión</span></div>
-    <div class="stamp" aria-hidden="true"><div>Comisión<br>Organizativa<b>APROBADO</b>Creativa<br>Barilochense</div></div>
-    <svg class="ridge" viewBox="0 0 860 28" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="1.5" points="0,26 60,20 95,24 140,9 170,17 210,4 245,15 290,11 330,22 380,14 420,19 455,6 490,13 520,8 560,21 610,16 650,23 700,10 735,17 770,7 810,18 860,15"/></svg>
-  </header>
-</div>
-<nav class="tabs" aria-label="Secciones"><div class="tabs-in" id="tabs"></div></nav>
-<div class="wrap"><main id="main"></main></div>
+<header class="mast"><div class="mast-in">
+  <img class="logo" src="logo.png" alt="Escudo oficial PIBEX 2026 Bariloche" width="128" height="128">
+  <div class="mast-txt">
+    <span class="eyebrow">Los Pibex · Octubre 2026</span>
+    <h1>PIBEX 2026<span>BARILOCHE</span></h1>
+  </div>
+  <p class="verse">Siete días en el sur, la montaña, el lago, el sol… y nosotros, en la mesa, con el truco y el alcohol.</p>
+  <div class="mast-tools"><button class="iconbtn" data-act="notif">📲 Instalar</button><button class="iconbtn" data-act="login" id="mebtn">Entrar</button></div>
+</div></header>
+<nav class="tabs" aria-label="Secciones"><div class="tabs-box"><button class="tabarrow l" id="tl" data-act="tl" aria-label="Secciones anteriores">‹</button><div class="tabs-in" id="tabs"></div><button class="tabarrow r" id="tr" data-act="tr" aria-label="Más secciones">›</button></div></nav>
+<div class="wrap"><main id="main"></main>
+<footer class="foot"><img src="logo.png" alt="" width="44" height="44"><p>¡Salud, amigos!</p><span>Comisión Organizativa Creativa Barilochense</span></footer></div>
 <div id="overlay"></div>
-
 <script>
 /* =========================================================
-   CONFIGURACIÓN — completar para la versión real (ver LEEME)
+   CONFIGURACIÓN
    ========================================================= */
 const CONFIG = {
-  SUPABASE_URL: "https://qwzgqxzfvldhsenjgbaw.supabase.co",          // ej: https://abcd1234.supabase.co
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emdxeHpmdmxkaHNlbmpnYmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTczMjAsImV4cCI6MjEwNzQ3MzMyMH0.VEc-4oKOFXbt_yB2HHyfYeVee5Rtxgt-0jkrWzJ13M4",          // la "anon public key" del proyecto
-  NTFY_TOPIC: "pibex2026-tero-f2cf0d37",            // ej: pibex2026-tero-k7q (inventen algo difícil de adivinar)
-  CLAVE_GRUPO: "",           // palabra clave para entrar (opcional). Ej: "tero"
-  MANSION: "San Carlos de Bariloche" // dirección o nombre de la mansión para Google Maps
+  SUPABASE_URL: "https://qwzgqxzfvldhsenjgbaw.supabase.co",
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emdxeHpmdmxkaHNlbmpnYmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTczMjAsImV4cCI6MjEwNzQ3MzMyMH0.VEc-4oKOFXbt_yB2HHyfYeVee5Rtxgt-0jkrWzJ13M4",
+  MANSION: "San Carlos de Bariloche"
 };
 
-/* ================= Datos base (de la planilla) ================= */
+/* ================= Datos base ================= */
 const PEOPLE = ["Ballve","Bambi","Bola","Bomo","Cabecha","Camello","Chori","Cochi","El Parce","EL WIZZARAP","Fermín","gigilo","Juan","Minus","Negro B","Negro Pablo","Pedri FQ","Pino","Pololo","Ramiro","Samu","Taio"];
 const COM = {
-  creativa: {name:"Comisión Directiva Organizativa Creativa", short:"Creativa", members:["Taio","Fermín","Cabecha","Pololo"],
-    mandate:"Emite comunicados oficiales, custodia el Programa de las Sorpresas, define la agenda cultural y revela los Choice Awards."},
-  economica: {name:"Comisión Organizativa Económica y de Gestión de Recursos y Dinámicas", short:"Económica", members:["Chori","Ballve"],
-    mandate:"Administra el Fondo, persigue deudores con cariño, registra pagos y garantiza que nunca falte hielo."},
-  green: {name:"Gestión Green Team", short:"Green Team", members:["Samu","Bambi"],
+  creativa: {name:"Comisión Directiva Organizativa Creativa", members:["Taio","Fermín","Cabecha","Pololo"],
+    mandate:"Emite comunicados oficiales, custodia el Programa de las Sorpresas, define la agenda cultural y conduce los Choice Awards."},
+  economica: {name:"Comisión Organizativa Económica y de Gestión de Recursos y Dinámicas", members:["Chori","Ballve"],
+    mandate:"Administra el Fondo, persigue deudores con cariño, registra pagos y co-firma las resoluciones de la organización."},
+  green: {name:"Gestión Green Team", members:["Samu","Bambi"],
     mandate:"Separación de residuos, orden de la mansión, turnos de limpieza y defensa del bosque andino patagónico."}
 };
+const ORG = [...COM.creativa.members, ...COM.economica.members];
+const isOrg = n => ORG.includes(n);
+const isIn = (k,n) => COM[k].members.includes(n);
 const VACANTES = [
   {id:"asado", name:"Ministerio de Fuego y Asado", mandate:"Parrilla, leña, punto de la carne y el chori de las 4 AM."},
   {id:"tribunal", name:"Tribunal de Disciplina y Multas", mandate:"Juzga faltas leves (dormirse, colarse, no lavar el vaso) y aplica penas en prendas o fernet."},
@@ -269,9 +406,7 @@ const VACANTES = [
   {id:"musica", name:"Dirección Nacional de Música", mandate:"Parlante, playlists y veto de canciones."},
   {id:"despertador", name:"Subsecretaría del Despertador", mandate:"Levanta a la tropa para excursiones. Cargo de alto riesgo."}
 ];
-const isIn = (key,n)=> COM[key].members.includes(n);
 
-// Vuelos (planilla, hoja Vuelos). null = falta cargar
 const FLIGHTS = [
  ["Minus","AR 1525 / AR 1676","09:25","14:30","24/10","AR 1677 / AR 1546","15:20","20:15","31/10"],
  ["Camello","AR 1525 / AR 1676","09:25","14:30","24/10","AR 1677 / AR 1546","15:20","20:15","31/10"],
@@ -297,9 +432,7 @@ const FLIGHTS = [
  ["Ballve",null,null,null,null,null,null,null,null]
 ].map(r=>({n:r[0],iv:r[1],is:r[2],il:r[3],if:r[4],vv:r[5],vs:r[6],vl:r[7],vf:r[8]}));
 
-// Hospedaje USD (hoja USD HOSPEDAJE) [pagado,total,nota]
 const HOSP = {"Negro B":[null,225,"Adelantó la seña (USD 630). A verificar."],"Cochi":[130,130],"Bambi":[225,225],"Ramiro":[225,225],"Pino":[125,225,"Lleva cash"],"Samu":[200,225],"Pololo":[225,225],"Bomo":[100,130],"Minus":[200,225],"Negro Pablo":[100,130],"Juan":[225,225],"Chori":[225,225],"El Parce":[0,225],"Cabecha":[0,225],"EL WIZZARAP":[0,225],"Taio":[225,225],"Camello":[0,225],"Bola":[0,225],"Pedri FQ":[225,225],"gigilo":[0,225]};
-// Fondo $ (hoja Fondo) [pagado,total] — $50.000 por día
 const FONDO = {"Negro B":[350000,350000],"Cochi":[200000,200000],"Bambi":[0,350000],"Ramiro":[0,350000],"Pino":[0,350000],"Samu":[0,350000],"Pololo":[0,350000],"Minus":[0,350000],"Negro Pablo":[0,200000],"Juan":[0,350000],"Chori":[0,350000],"El Parce":[0,350000],"Cabecha":[350000,350000],"EL WIZZARAP":[0,350000],"Taio":[350000,350000],"Camello":[0,350000],"Bola":[350000,350000],"Pedri FQ":[350000,350000],"gigilo":[0,350000]};
 const ALIAS_FONDO = "barilochepibex.mp";
 
@@ -339,7 +472,7 @@ Se anima, se empuja y se espera que todos participen de esta iniciativa, por el 
 Sin otro particular, saludamos a ustedes muy atentamente.`}
 }];
 
-const AWARD_CATS = ["El más borracho","El menos ordenado","El que menos ayudó","El que más ayudó","El más dormilón","El primero en caer","El último en irse a dormir","El que más se quejó","Mejor asador / cocinero","Peor DJ","El desaparecido (\"ya vuelvo\")","Revelación del viaje","Mejor outfit de montaña","El más fotogénico"];
+const DEFAULT_CATS = ["El más borracho","El menos ordenado","El que menos ayudó","El que más ayudó","El más dormilón","El primero en caer","El último en irse a dormir","El que más se quejó","Mejor asador / cocinero","Peor DJ","El desaparecido (\"ya vuelvo\")","Revelación del viaje","Mejor outfit de montaña","El más fotogénico"].map((t,i)=>({id:"d"+(i+1),title:t}));
 
 const PLACES = [
  {cat:"Súper y provisiones", items:[
@@ -378,6 +511,7 @@ const PLACES = [
 ];
 const mapsUrl = q => "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(q);
 const mapsQ = name => /bariloche/i.test(name)?name:name+" Bariloche";
+const EMOJIS=["🏔️","🍺","🧉","🔥","🐺","🦊","🐻","🦅","🌲","🎲","🃏","🍫","⛷️","🎸","😎","🤠","🦙","🥩","🐧","🦁","🐙","🦄","👽","🤖","🍕","🌶️","⚽","🎯","🚀","🦖","🐸","🍷"];
 
 /* ================= Utilidades ================= */
 const $ = s=>document.querySelector(s);
@@ -387,14 +521,15 @@ const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return n
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
 const usd=n=>"USD "+Number(n||0).toLocaleString("es-AR");
 const ars=n=>"$"+Number(n||0).toLocaleString("es-AR");
+const pct=(a,b)=>b?Math.round(a/b*100):0;
 function ago(iso){const s=(Date.now()-new Date(iso))/1000;if(s<60)return"recién";if(s<3600)return"hace "+Math.floor(s/60)+" min";if(s<86400)return"hace "+Math.floor(s/3600)+" h";const d=Math.floor(s/86400);return d===1?"ayer":"hace "+d+" días"}
-function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const dayLabel = d => (DAYS.find(x=>x[0]===d)||[0,d])[1];
 
-/* ================= Datos compartidos =================
-   Una sola tabla "items": {id, kind, data(json), author, created_at}
-   Sin Supabase configurado: modo demo, guarda solo en este navegador. */
-let ITEMS=[], sb=null;
+/* ================= Datos compartidos ================= */
+let ITEMS=[], sb=null, PERFILES={};
 const ONLINE = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY);
 const Store = {
   async init(){
@@ -404,9 +539,10 @@ const Store = {
       await this.reload();
       sb.channel("items").on("postgres_changes",{event:"*",schema:"public",table:"items"},async()=>{await this.reload();liveRefresh()}).subscribe();
     } else { ITEMS = lsGet("pibex_items")||[]; }
+    await Auth.list();
   },
   async reload(){ const {data,error}=await sb.from("items").select("*").order("created_at",{ascending:true}); if(!error) ITEMS=data; },
-  persist(){ if(!lsSet("pibex_items",ITEMS)) toast("No entra más en el modo demo (las fotos ocupan mucho)."); },
+  persist(){ if(!lsSet("pibex_items",ITEMS)) toast("No entra más en el modo demo."); },
   async add(kind,data){
     const row={kind,data,author:ME.name};
     if(ONLINE){ const {data:r,error}=await sb.from("items").insert(row).select().single(); if(error) throw error; ITEMS.push(r); return r; }
@@ -420,80 +556,107 @@ const Store = {
     ITEMS=ITEMS.filter(i=>i.id!==id);
     if(ONLINE){ const {error}=await sb.from("items").delete().eq("id",id); if(error) throw error; } else this.persist();
   },
-  async upload(blob){
-    if(ONLINE){ const path=Date.now()+"-"+uid()+".jpg"; const {error}=await sb.storage.from("fotos").upload(path,blob,{contentType:"image/jpeg"}); if(error) throw error; return sb.storage.from("fotos").getPublicUrl(path).data.publicUrl; }
+  async upload(blob,ext,type){
+    if(ONLINE){ const path=Date.now()+"-"+uid()+"."+ext; const {error}=await sb.storage.from("fotos").upload(path,blob,{contentType:type}); if(error) throw error; return sb.storage.from("fotos").getPublicUrl(path).data.publicUrl; }
     return await new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.readAsDataURL(blob)});
   }
 };
 const of = k => ITEMS.filter(i=>i.kind===k);
 const refs = (k,ref) => ITEMS.filter(i=>i.kind===k && i.data.ref===ref);
+const latest = k => of(k).pop();
 
-async function notify(title,message){
-  if(!CONFIG.NTFY_TOPIC) return;
-  try{ await fetch("https://ntfy.sh/",{method:"POST",body:JSON.stringify({topic:CONFIG.NTFY_TOPIC,title,message:message.slice(0,280),click:location.href.split("#")[0]})}); }catch(e){}
+/* ---- Usuarios con PIN (el PIN vive en la base, nadie lo puede leer) ---- */
+const Auth = {
+  async list(){
+    if(ONLINE){ const {data,error}=await sb.rpc("pibex_perfiles"); if(error){ console.error(error); AUTH_ERR=true; return; } PERFILES=Object.fromEntries((data||[]).map(r=>[r.name,r.emoji])); }
+    else { const p=lsGet("pibex_perfiles")||{}; PERFILES=Object.fromEntries(Object.entries(p).map(([n,v])=>[n,v.emoji])); }
+  },
+  async claim(name,pin,emoji){
+    if(ONLINE){ const {data,error}=await sb.rpc("pibex_claim",{p_name:name,p_pin:pin,p_emoji:emoji}); if(error) throw error; return data; }
+    const p=lsGet("pibex_perfiles")||{}; if(p[name]) return "taken"; if(Object.values(p).some(v=>v.emoji===emoji)) return "emoji";
+    p[name]={pin,emoji}; lsSet("pibex_perfiles",p); return "ok";
+  },
+  async login(name,pin,emoji){
+    if(ONLINE){ const {data,error}=await sb.rpc("pibex_login",{p_name:name,p_pin:pin,p_emoji:emoji||null}); if(error) throw error; return data; }
+    const p=lsGet("pibex_perfiles")||{}; if(!p[name]) return "nouser"; if(p[name].pin!==pin) return "bad";
+    if(emoji){ if(Object.entries(p).some(([n,v])=>v.emoji===emoji&&n!==name)) return "emoji"; p[name].emoji=emoji; lsSet("pibex_perfiles",p); }
+    return "ok";
+  }
+};
+let AUTH_ERR=false;
+let ME = lsGet("pibex_me2");
+function emojiOf(n){ return PERFILES[n] || ""; }
+const av = n=>`<span class="av" title="${esc(n)}">${esc(PERFILES[n]||n.slice(0,1).toUpperCase())}</span>`;
+
+function notify(){ /* sin avisos externos: las novedades se marcan dentro de la web */ }
+
+/* ---- Novedades desde tu última visita ---- */
+const SEEN_PREV = lsGet("pibex_seen") || Date.now();
+let TAB_SEEN = lsGet("pibex_seen_tabs") || {};
+const KIND_TAB = {comunicado:"comunicados",event:"cronograma",post:"muro",photo:"fotos",truco:"truco",place:"lugares",postulacion:"comisiones",vuelo:"vuelos",pago:"plata"};
+function tabOf(it){
+  if(it.kind==="comment"){ if(String(it.data.ref).startsWith("seed")) return "comunicados"; const t=ITEMS.find(i=>i.id===it.data.ref); return t?KIND_TAB[t.kind]:null; }
+  return KIND_TAB[it.kind]||null;
 }
-
-/* ================= Usuario (sin clave) ================= */
-let ME = lsGet("pibex_me");
-const EMOJIS=["🏔️","🍺","🧉","🔥","🐺","🦊","🐻","🦅","🌲","🎲","🃏","🍫","⛷️","🎸","😎","🤠","🦙","🥩"];
-function emojiOf(n){ const p=of("perfil").filter(i=>i.author===n).pop(); if(p) return p.data.emoji; if(ME&&ME.name===n) return ME.emoji; return n.slice(0,1).toUpperCase(); }
-const av = n=>`<span class="av" title="${esc(n)}">${esc(emojiOf(n))}</span>`;
+const isNew = (it,since) => (!ME || it.author!==ME.name) && new Date(it.created_at).getTime() > since;
+function newCount(tab){ const since=TAB_SEEN[tab]||SEEN_PREV; return ITEMS.filter(i=>tabOf(i)===tab && isNew(i,since)).length; }
+function markSeen(tab){ TAB_SEEN[tab]=Date.now(); lsSet("pibex_seen_tabs",TAB_SEEN); }
 
 /* ================= Router ================= */
-const TABS=[["inicio","Inicio"],["comunicados","Comunicados"],["cronograma","Cronograma"],["muro","Muro"],["fotos","Fotos"],["truco","Truco"],["awards","Choice Awards"],["vuelos","Vuelos"],["plata","Plata"],["lugares","Lugares"],["compras","Compras"],["comisiones","Comisiones"]];
+const TABS=[["inicio","Inicio"],["comunicados","Comunicados"],["cronograma","Cronograma"],["muro","Muro"],["fotos","Fotos"],["truco","Truco"],["awards","Choice Awards"],["cuartos","Cuartos"],["vuelos","Vuelos"],["plata","Plata"],["lugares","Lugares"],["comisiones","Comisiones"]];
 let TAB = (location.hash||"").slice(1); if(!TABS.some(t=>t[0]===TAB)) TAB="inicio";
-const OPEN = new Set(); let PENDING=false, ARM=null;
+const OPEN = new Set(); let PENDING=false, ARM=null, PHOTO_SORT="new", REVEAL=null;
 
-function renderTabs(){ $("#tabs").innerHTML = TABS.map(([id,l])=>`<button class="tab" data-tab="${id}" ${id===TAB?'aria-current="page"':""}>${l}</button>`).join(""); }
+function renderTabs(){
+  $("#tabs").innerHTML = TABS.map(([id,l])=>{const n=id===TAB?0:newCount(id);return `<button class="tab" data-tab="${id}" ${id===TAB?'aria-current="page"':""}>${l}${n?`<span class="dot" aria-label="${n} novedades">${n}</span>`:""}</button>`}).join("");
+  const cur=document.querySelector(".tab[aria-current]"); if(cur) cur.scrollIntoView({inline:"center",block:"nearest"});
+  updateArrows();
+}
+function updateArrows(){ const t=$("#tabs"); if(!t) return; $("#tl").disabled = t.scrollLeft<=2; $("#tr").disabled = t.scrollLeft+t.clientWidth>=t.scrollWidth-2; }
 function render(){
+  if(TAB!=="inicio") markSeen(TAB);
   renderTabs();
   $("#mebtn").innerHTML = ME? `${esc(emojiOf(ME.name))} ${esc(ME.name)}` : "Entrar";
-  const demo = ONLINE?"":`<div class="banner"><b>Vista previa en modo demo.</b> Lo que cargues queda solo en tu navegador. Cuando se conecte la base de datos, todo se comparte entre los 22 y llegan avisos al celular.</div>`;
-  $("#main").innerHTML = demo + (VIEWS[TAB]||VIEWS.inicio)();
+  const demo = ONLINE?"":`<div class="banner"><b>Vista previa en modo demo.</b> Lo que cargues queda solo en este navegador. En la web real todo se comparte entre los 22.</div>`;
+  const autherr = AUTH_ERR?`<div class="banner"><b>Falta un paso en Supabase:</b> correr el SQL de usuarios (v2). Sin eso nadie puede entrar.</div>`:"";
+  $("#main").innerHTML = demo + autherr + (VIEWS[TAB]||VIEWS.inicio)();
   PENDING=false; document.querySelector(".newpill")?.remove();
+  if(TAB==="inicio") loadWeather();
 }
 function liveRefresh(){
+  if(REVEAL) return;
   const a=document.activeElement;
   if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.value){ if(!PENDING){PENDING=true;const b=document.createElement("button");b.className="btn sm newpill";b.textContent="Hay novedades · actualizar";b.dataset.act="refresh";document.body.appendChild(b)} return; }
+  if($("#overlay").innerHTML) return;
   render();
 }
 
 /* ================= Componentes ================= */
-function thread(ref, label="comentarios"){
-  const cs = refs("comment",ref);
-  const open = OPEN.has(ref) || cs.length<=2;
+const canDel = it => ME && (it.author===ME.name || isOrg(ME.name));
+const delBtn = it => canDel(it) ? `<button class="link danger" data-act="del" data-id="${it.id}">borrar</button>`:"";
+function thread(ref,label="comentarios"){
+  const cs = refs("comment",ref); const open = OPEN.has(ref) || cs.length<=2;
   return `<div class="thread">
     ${cs.length>2 && !OPEN.has(ref) ? `<button class="link" data-act="open" data-id="${ref}">Ver los ${cs.length} ${label}</button>`:""}
-    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${ME&&c.author===ME.name?`<button class="link danger" data-act="del" data-id="${c.id}">borrar</button>`:""}</div><div class="txt">${esc(c.data.text)}</div></div></div>`).join(""):""}
+    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${delBtn(c)}</div><div class="txt">${esc(c.data.text)}</div></div></div>`).join(""):""}
     <form class="cform" data-form="comment" data-ref="${ref}"><input type="text" id="c-${ref}" name="text" placeholder="Comentar…" autocomplete="off" required maxlength="500"><button class="btn sm">Enviar</button></form>
   </div>`;
 }
 function docBody(text){
-  return text.split(/\n\n+/).map(block=>{
-    const lines=block.split("\n");
-    if(lines[0].startsWith("## ")){ const h=lines.shift().slice(3); return `<h4>${esc(h)}</h4>`+(lines.length?para(lines):""); }
-    return para(lines);
-  }).join("");
-  function para(lines){ const li=lines.filter(l=>l.startsWith("- ")); const tx=lines.filter(l=>!l.startsWith("- "));
-    return (tx.length?`<p>${tx.map(esc).join("<br>")}</p>`:"")+(li.length?`<ul>${li.map(l=>`<li>${esc(l.slice(2))}</li>`).join("")}</ul>`:""); }
+  const para=lines=>{const li=lines.filter(l=>l.startsWith("- "));const tx=lines.filter(l=>!l.startsWith("- "));
+    return (tx.length?`<p>${tx.map(esc).join("<br>")}</p>`:"")+(li.length?`<ul>${li.map(l=>`<li>${esc(l.slice(2))}</li>`).join("")}</ul>`:"");};
+  return text.split(/\n\n+/).map(block=>{const lines=block.split("\n"); if(lines[0].startsWith("## ")){const h=lines.shift().slice(3);return `<h4>${esc(h)}</h4>`+(lines.length?para(lines):"")} return para(lines);}).join("");
 }
-const personOpts = (sel="",blank="— elegir —") => `<option value="">${blank}</option>`+PEOPLE.map(p=>`<option ${p===sel?"selected":""}>${esc(p)}</option>`).join("");
-const delBtn = it => ME&&it.author===ME.name ? `<button class="link danger" data-act="del" data-id="${it.id}">borrar</button>`:"";
+const personOpts = (sel="",blank="— elegir —",list=PEOPLE) => `<option value="">${blank}</option>`+list.map(p=>`<option ${p===sel?"selected":""}>${esc(p)}</option>`).join("");
 function allComunicados(){ return [...SEED_COMUNICADOS,...of("comunicado")].map((c,i)=>({...c,num:i+1})); }
+function armBtn(id,label,confirmLabel,act,cls="btn sm"){ return ARM===id?`<button class="btn red sm" data-act="${act}" data-id="${id}">${confirmLabel}</button>`:`<button class="${cls}" data-act="arm" data-id="${id}">${label}</button>`; }
 
-/* ---- Vuelos con correcciones ---- */
-function flights(){
-  return FLIGHTS.map(f=>{ const o=of("vuelo").filter(i=>i.data.person===f.n).pop(); return o?{...f,...o.data.f,upd:o}:f; });
-}
-/* ---- Plata con pagos registrados ---- */
+/* ---- Vuelos y plata ---- */
+function flights(){ return FLIGHTS.map(f=>{ const o=of("vuelo").filter(i=>i.data.person===f.n).pop(); return o?{...f,...o.data.f,upd:o}:f; }); }
 function money(){
   const extra=(p,c)=>of("pago").filter(i=>i.data.person===p&&i.data.concept===c).reduce((s,i)=>s+Number(i.data.amount||0),0);
-  return PEOPLE.map(p=>{
-    const h=HOSP[p], f=FONDO[p];
-    return {p,
-      h: h? {paid:h[0]==null?null:h[0]+extra(p,"hosp"), total:h[1], note:h[2]} : null,
-      f: f? {paid:f[0]+extra(p,"fondo"), total:f[1]} : null};
-  });
+  return PEOPLE.map(p=>{const h=HOSP[p], f=FONDO[p];
+    return {p, h: h? {paid:h[0]==null?null:h[0]+extra(p,"hosp"), total:h[1], note:h[2]} : null, f: f? {paid:f[0]+extra(p,"fondo"), total:f[1]} : null};});
 }
 function statusPill(paid,total){
   if(paid==null) return `<span class="pill warn">a verificar</span>`;
@@ -502,126 +665,200 @@ function statusPill(paid,total){
   return `<span class="pill bad">debe todo</span>`;
 }
 
+/* ---- Cronograma ---- */
+function evStatus(e){ return e.data.status || (isOrg(e.author)?"ok":"pendiente"); }
+function allEvents(){
+  const fs=flights(); const fixed=[];
+  const arr={}; fs.filter(f=>f.il&&f.il!=="—").forEach(f=>{(arr[f.il]=arr[f.il]||[]).push(f.n)});
+  Object.entries(arr).forEach(([t,ns])=>fixed.push({id:"fx-in-"+t,fixed:true,day:"2026-10-24",time:t,title:"Aterrizan en BRC",desc:ns.join(", ")}));
+  const dep={}; fs.filter(f=>f.vs).forEach(f=>{(dep[f.vs]=dep[f.vs]||[]).push(f.n)});
+  Object.entries(dep).forEach(([t,ns])=>fixed.push({id:"fx-out-"+t,fixed:true,day:"2026-10-31",time:t,title:"Despegan de BRC",desc:ns.join(", ")}));
+  fixed.push({id:"fx-awards",fixed:true,day:"2026-10-30",time:"22:00",title:"Ceremonia PIBEX Choice Awards",desc:"Entrega de premios. Horario a confirmar por la Comisión."});
+  const user=of("event").map(e=>({...e.data,id:e.id,item:e,status:evStatus(e)}));
+  return [...fixed,...user].map(e=>({...e,dayLabel:dayLabel(e.day),when:e.time?new Date(e.day+"T"+e.time+":00-03:00").getTime():null}));
+}
+
 /* ---- Truco ---- */
 function trucoStats(){
-  const ind={}, par={};
-  const bump=(o,k,won,pf,pc)=>{o[k]=o[k]||{k,pj:0,pg:0,pp:0,pf:0,pc:0};const r=o[k];r.pj++;won?r.pg++:r.pp++;r.pf+=pf;r.pc+=pc;};
-  of("truco").forEach(m=>{const d=m.data;const w1=d.s1>d.s2;
-    const k1=[...d.p1].sort().join(" & "), k2=[...d.p2].sort().join(" & ");
-    bump(par,k1,w1,d.s1,d.s2); bump(par,k2,!w1,d.s2,d.s1);
+  const ind={}, par={}; const ms=of("truco");
+  const bump=(o,k,won,pf,pc)=>{o[k]=o[k]||{k,pj:0,pg:0,pp:0,pf:0,pc:0,seq:[]};const r=o[k];r.pj++;won?r.pg++:r.pp++;r.pf+=pf;r.pc+=pc;r.seq.push(won)};
+  ms.forEach(m=>{const d=m.data;const w1=d.s1>d.s2;
+    bump(par,[...d.p1].sort().join(" & "),w1,d.s1,d.s2); bump(par,[...d.p2].sort().join(" & "),!w1,d.s2,d.s1);
     d.p1.forEach(p=>bump(ind,p,w1,d.s1,d.s2)); d.p2.forEach(p=>bump(ind,p,!w1,d.s2,d.s1));});
   const sort=a=>Object.values(a).sort((x,y)=>y.pg-x.pg||(y.pf-y.pc)-(x.pf-x.pc)||y.pf-x.pf);
-  return {ind:sort(ind),par:sort(par)};
+  const streak=seq=>{let best=0,c=0;seq.forEach(w=>{c=w?c+1:0;best=Math.max(best,c)});let cur=0;for(let i=seq.length-1;i>=0&&seq[i];i--)cur++;return {best,cur}};
+  Object.values(ind).concat(Object.values(par)).forEach(r=>{const s=streak(r.seq);r.best=s.best;r.cur=s.cur});
+  return {ind:sort(ind),par:sort(par),ms};
 }
 
 /* ---- Awards ---- */
-function awardCats(){ return [...AWARD_CATS.map(t=>({id:"cat-"+t,title:t})), ...of("award_cat").map(i=>({id:i.id,title:i.data.title,by:i.author,item:i}))]; }
+function awardsCfg(){ const it=latest("awards"); return it? {...it.data,_id:it.id} : {phase:"hidden",cats:DEFAULT_CATS}; }
+async function saveAwards(patch){ const cur=latest("awards"); if(cur) await Store.update(cur.id,patch); else await Store.add("awards",{...{phase:"hidden",cats:DEFAULT_CATS},...patch}); }
 function myVote(cat){ return ME? of("vote").filter(v=>v.data.cat===cat&&v.author===ME.name).pop():null; }
 function tally(cat){ const last={}; of("vote").filter(v=>v.data.cat===cat).forEach(v=>last[v.author]=v.data.nominee); const t={}; Object.values(last).forEach(n=>t[n]=(t[n]||0)+1); return Object.entries(t).sort((a,b)=>b[1]-a[1]); }
-const revealed = ()=> of("award_reveal").length>0;
+
+/* ---- Cuartos ---- */
+function roomsCfg(){ const it=latest("cuartos"); return it? {...it.data,_id:it.id} : {rooms:[],assign:{}}; }
+async function saveRooms(patch){ const cur=latest("cuartos"); if(cur) await Store.update(cur.id,patch); else await Store.add("cuartos",{rooms:[],assign:{},...patch}); }
+
+/* ---- Fotos ---- */
+const likes = id => refs("like",id);
+
+/* ---- Clima (Open-Meteo, sin clave) ---- */
+let WX=null, WX_LOADING=false;
+const WMO=c=>c===0?["☀️","Despejado"]:c<=2?["🌤️","Algo nublado"]:c===3?["☁️","Nublado"]:c<=48?["🌫️","Niebla"]:c<=57?["🌦️","Llovizna"]:c<=67?["🌧️","Lluvia"]:c<=77?["🌨️","Nieve"]:c<=82?["🌦️","Chaparrones"]:c<=86?["❄️","Nieve"]:["⛈️","Tormenta"];
+async function loadWeather(){
+  if(WX||WX_LOADING) return; WX_LOADING=true;
+  const today=new Date(); const max=new Date(today.getTime()+15*86400000);
+  const start=new Date(Math.max(today, new Date("2026-10-24T12:00:00-03:00"))); const end=new Date(Math.min(max, new Date("2026-10-31T12:00:00-03:00")));
+  if(start>end){ WX={none:true}; paintWeather(); return; }
+  const f=d=>d.toISOString().slice(0,10);
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=-41.13&longitude=-71.31&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FArgentina%2FBuenos_Aires&start_date=${f(start)}&end_date=${f(end)}`);
+    const j=await r.json(); if(!j.daily) throw 0; WX=j.daily;
+  }catch(e){ WX={none:true,err:true}; }
+  paintWeather();
+}
+function paintWeather(){
+  const el=$("#wx"); if(!el||!WX) return;
+  if(WX.none){ el.innerHTML=`<p class="muted small">${WX.err?"El pronóstico no se pudo cargar.":"El pronóstico de Bariloche aparece acá a partir del 15/10 (16 días antes)."}</p>`; return; }
+  el.innerHTML=`<div class="wx">${WX.time.map((d,i)=>{const [e,t]=WMO(WX.weather_code[i]);return `<div title="${t}"><b>${esc(dayLabel(d).split(" ")[0].slice(0,3))} ${d.slice(8)}</b><span class="e">${e}</span><span class="tmp">${Math.round(WX.temperature_2m_max[i])}° / ${Math.round(WX.temperature_2m_min[i])}°</span><span class="muted">💧${WX.precipitation_probability_max[i]??"–"}%</span></div>`}).join("")}</div>`;
+}
 
 /* ================= Vistas ================= */
 const VIEWS = {
 inicio(){
-  const com = allComunicados().pop();
-  const now=Date.now();
-  const nextEv = allEvents().filter(e=>e.when && e.when>now).sort((a,b)=>a.when-b.when)[0];
-  const m = money(); const hp=m.reduce((s,x)=>s+(x.h&&x.h.paid||0),0), ht=m.reduce((s,x)=>s+(x.h?x.h.total:0),0);
-  const lead = trucoStats().par[0];
-  const feedKinds={post:"publicó en el muro",comment:"comentó",event:"agregó al cronograma",photo:"subió una foto",truco:"cargó un partido de truco",comunicado:"emitió un comunicado",place:"sugirió un lugar",compra:"agregó a compras"};
-  const feed = ITEMS.filter(i=>feedKinds[i.kind]).slice(-8).reverse();
+  const com=allComunicados().pop(); const now=Date.now();
+  const evs=allEvents(); const approved=evs.filter(e=>!e.fixed&&e.status==="ok"); const pend=evs.filter(e=>!e.fixed&&e.status==="pendiente");
+  const nextEv=evs.filter(e=>(e.fixed||e.status==="ok")&&e.when&&e.when>now).sort((a,b)=>a.when-b.when)[0];
+  const m=money(); const hp=m.reduce((s,x)=>s+(x.h&&x.h.paid||0),0), ht=m.reduce((s,x)=>s+(x.h?x.h.total:0),0);
+  const fp=m.reduce((s,x)=>s+(x.f?x.f.paid:0),0), ft=m.reduce((s,x)=>s+(x.f?x.f.total:0),0);
+  const debenTodo=m.filter(x=>(x.h&&x.h.paid===0)).length;
+  const fs=flights(); const cargados=fs.filter(f=>f.il&&f.vs).length;
+  const arrivals=fs.filter(f=>/^\d\d:\d\d$/.test(f.il||"")).sort((a,b)=>a.il.localeCompare(b.il));
+  const claimed=PEOPLE.filter(p=>PERFILES[p]); const missing=PEOPLE.filter(p=>!PERFILES[p]);
+  const tr=trucoStats(); const lead=tr.par[0];
+  const photos=of("photo"); const topPh=photos.slice().sort((a,b)=>likes(b.id).length-likes(a.id).length)[0];
+  const talk={}; [...of("post"),...of("comment")].forEach(i=>talk[i.author]=(talk[i.author]||0)+1); const charla=Object.entries(talk).sort((a,b)=>b[1]-a[1])[0];
+  const aw=awardsCfg(); const voters=new Set(of("vote").map(v=>v.author)).size;
+  const rc=roomsCfg(); const myRoom=ME&&rc.assign&&rc.assign[ME.name]?rc.rooms.find(r=>r.id===rc.assign[ME.name]):null;
+  const feedKinds={post:"publicó en el muro",comment:"comentó",event:"propuso un plan",photo:"subió un archivo",truco:"cargó un partido de truco",comunicado:"emitió un comunicado",place:"sugirió un lugar"};
+  const nuevos=ITEMS.filter(i=>feedKinds[i.kind]&&isNew(i,SEEN_PREV));
+  const feed=(nuevos.length?nuevos:ITEMS.filter(i=>feedKinds[i.kind])).slice(-10).reverse();
+  const tile=(tab,lbl,big,sub)=>`<button class="tile" data-tab="${tab}"><span class="lbl">${lbl}</span><span class="big">${big}</span>${sub?`<span class="sub">${sub}</span>`:""}</button>`;
   return `
   <section class="sheet official">
-    <span class="eyebrow" id="cd-label">Faltan para el viaje</span>
+    <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
     <div class="count" id="countdown">${countdownHTML()}</div>
-    <p class="muted">Llegan entre las 08:10 y las 20:50 del sábado 24. Se vuelve el sábado 31.</p>
+    <span class="eyebrow">Pronóstico Bariloche</span>
+    <div id="wx"><p class="muted small">Cargando pronóstico…</p></div>
   </section>
+  <div class="tiles">
+    ${tile("inicio","Ya entraron",`${claimed.length}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,missing.length?("Faltan: "+esc(missing.slice(0,6).join(", "))+(missing.length>6?"…":"")):"Están todos")}
+    ${tile("plata","Hospedaje",pct(hp,ht)+"%",`${usd(hp)} de ${usd(ht)}`)}
+    ${tile("plata","Fondo común",pct(fp,ft)+"%",`${debenTodo} deben todo el hospedaje`)}
+    ${tile("vuelos","Vuelos completos",`${cargados}<span class="muted" style="font-size:1rem">/${PEOPLE.length}</span>`,`${PEOPLE.length-cargados} con datos faltantes`)}
+    ${tile("cronograma","Planes aprobados",approved.length,`${pend.length} propuestas en revisión`)}
+    ${tile("fotos","Fotos y videos",photos.length,photos.length?`${of("like").length} me gusta repartidos`:"Todavía ninguna")}
+    ${tile("truco","Partidos de truco",tr.ms.length,lead?`Puntero: ${esc(lead.k)}`:"Mesa sin abrir")}
+    ${tile("awards","Choice Awards",aw.phase==="hidden"?"🔒":aw.phase==="voting"?voters:"🏆",aw.phase==="hidden"?"Categorías en deliberación":aw.phase==="voting"?"ya votaron":"Resultados revelados")}
+  </div>
   <div class="grid2">
-    <section class="sheet">
-      <span class="eyebrow">Último comunicado · N.º ${com.num}</span>
-      <h3>${esc(com.data.title)}</h3>
-      <p class="muted small">${esc(com.data.body.replace(/\n/g," ").slice(0,160))}…</p>
-      <button class="link" data-tab="comunicados">Leer completo</button>
-    </section>
-    <section class="sheet">
-      <span class="eyebrow">Próximo en el cronograma</span>
-      ${nextEv?`<h3>${esc(nextEv.title)}</h3><p class="mono small">${esc(nextEv.dayLabel)} · ${esc(nextEv.time||"")}</p>`:`<p class="empty">Todavía no hay planes con hora.</p>`}
-      <button class="link" data-tab="cronograma">Ver cronograma</button>
-    </section>
-    <section class="sheet">
-      <span class="eyebrow">Hospedaje recaudado</span>
-      <div class="big">${Math.round(hp/ht*100)}%</div>
-      <div class="bar"><i style="width:${Math.min(100,hp/ht*100)}%"></i></div>
-      <p class="mono small muted">${usd(hp)} de ${usd(ht)}</p>
-      <button class="link" data-tab="plata">Quién debe</button>
-    </section>
-    <section class="sheet">
-      <span class="eyebrow">Torneo de truco · puntero</span>
-      ${lead?`<h3>${esc(lead.k)}</h3><p class="mono small">${lead.pg} ganados · ${lead.pf} puntos</p>`:`<p class="empty">Ningún partido cargado. Se abre la mesa el 24.</p>`}
-      <button class="link" data-tab="truco">Tabla completa</button>
-    </section>
+    <section class="sheet"><span class="eyebrow">Último comunicado · N.º ${com.num}</span><h3>${esc(com.data.title)}</h3>
+      <p class="muted small">${esc(com.data.body.replace(/\n/g," ").slice(0,150))}…</p><button class="link" data-tab="comunicados">Leer completo</button></section>
+    <section class="sheet"><span class="eyebrow">Próximo en el cronograma</span>
+      ${nextEv?`<h3>${esc(nextEv.title)}</h3><p class="mono small">${esc(nextEv.dayLabel)} · ${esc(nextEv.time||"")}</p>${nextEv.desc?`<p class="small muted">${esc(nextEv.desc)}</p>`:""}`:`<p class="empty">Nada agendado con hora.</p>`}
+      <button class="link" data-tab="cronograma">Ver cronograma</button></section>
+    <section class="sheet"><span class="eyebrow">Operativo aeropuerto · sábado 24</span>
+      ${arrivals.length?`<p><b>Primero en pisar Bariloche:</b> ${esc(arrivals[0].n)} (${arrivals[0].il})</p><p><b>Último en llegar:</b> ${esc(arrivals[arrivals.length-1].n)} (${arrivals[arrivals.length-1].il})</p><p class="muted small">${Object.values(arrivals.reduce((a,f)=>{(a[f.il]=a[f.il]||[]).push(f.n);return a},{})).sort((a,b)=>b.length-a.length)[0].length} llegan juntos en el vuelo más cargado.</p>`:""}
+      <button class="link" data-tab="vuelos">Ver llegadas</button></section>
+    <section class="sheet"><span class="eyebrow">Tu cuarto</span>
+      ${myRoom?`<h3>${esc(myRoom.name)}</h3><p class="small muted">Con ${esc(PEOPLE.filter(p=>rc.assign[p]===myRoom.id&&p!==ME.name).join(", ")||"nadie, suerte")}</p>`:`<p class="empty">${rc.drawnAt?"No te tocó cuarto todavía.":"El sorteo de cuartos todavía no se hizo."}</p>`}
+      <button class="link" data-tab="cuartos">Ver cuartos</button></section>
+    ${topPh&&likes(topPh.id).length?`<section class="sheet"><span class="eyebrow">La más likeada · ${likes(topPh.id).length} ❤️</span>${topPh.data.type==="video"?`<video class="thumb" src="${esc(topPh.data.url)}" muted playsinline preload="metadata"></video>`:`<img class="thumb" src="${esc(topPh.data.url)}" alt="${esc(topPh.data.caption||"Foto")}">`}<span class="small muted">de ${esc(topPh.author)}</span></section>`:""}
+    ${charla?`<section class="sheet"><span class="eyebrow">El más charlatán del muro</span><h3>${esc(charla[0])}</h3><p class="small muted">${charla[1]} publicaciones y comentarios</p><button class="link" data-tab="muro">Ir al muro</button></section>`:""}
   </div>
   <section class="sheet">
-    <div class="row between"><span class="eyebrow">Movimiento reciente</span><button class="iconbtn" data-act="notif">🔔 Activar avisos en el celu</button></div>
-    ${feed.length?`<div class="feed">${feed.map(i=>`<div class="it">${av(i.author)}<span><b>${esc(i.author)}</b> ${feedKinds[i.kind]}${i.data.text||i.data.title?`: <span class="muted">${esc((i.data.text||i.data.title).slice(0,70))}</span>`:""}</span><span class="muted small">${ago(i.created_at)}</span></div>`).join("")}</div>`:`<p class="empty">Acá aparece todo lo que se publica. Arrancá comentando el Comunicado N.º 1.</p>`}
+    <div class="row between"><span class="eyebrow">${nuevos.length?`${nuevos.length} novedades desde tu última visita`:"Movimiento reciente"}</span><button class="iconbtn" data-act="notif">📲 Instalar en el celu</button></div>
+    ${feed.length?`<div class="feed">${feed.map(i=>`<div class="it">${av(i.author)}<span><b>${esc(i.author)}</b> ${feedKinds[i.kind]}${i.data.text||i.data.title?`: <span class="muted">${esc((i.data.text||i.data.title).slice(0,70))}</span>`:""}</span><span class="muted small">${ago(i.created_at)}</span></div>`).join("")}</div>`:`<p class="empty">Acá aparece todo lo que se publica.</p>`}
   </section>`;
 },
 
 comunicados(){
-  const list = allComunicados().reverse();
-  const canPub = ME && isIn("creativa",ME.name);
-  return `<div class="head"><span class="eyebrow">Lineamientos y resoluciones</span><h2>Comunicados oficiales</h2><p>Emitidos por la Comisión Directiva Organizativa Creativa. Tienen fuerza de ley dentro de la mansión.</p></div>
-  ${canPub?`<form class="sheet" data-form="comunicado"><span class="eyebrow">Emitir comunicado N.º ${list.length+1}</span>
+  const list=allComunicados().reverse(); const can=ME&&isOrg(ME.name);
+  return `<div class="head"><span class="eyebrow">Lineamientos y resoluciones</span><h2>Comunicados oficiales</h2><p>Los emite la organización (Comisión Creativa y Comisión Económica). Tienen fuerza de ley dentro de la mansión.</p></div>
+  ${can?`<form class="sheet" data-form="comunicado"><span class="eyebrow">Emitir comunicado N.º ${list.length+1}</span>
     <div class="field"><label for="com-t">Título</label><input type="text" id="com-t" name="title" required></div>
     <div class="field"><label for="com-b">Texto</label><textarea id="com-b" name="body" rows="8" required placeholder="Usá ## para subtítulos y - para listas"></textarea></div>
     <div><button class="btn">Emitir y avisar a todos</button></div></form>`:""}
   ${list.map(c=>`<article class="sheet official doc" id="${c.id}">
-    <span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span>
-    <h3>${esc(c.data.title)}</h3>
+    <div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:4px"><span class="num">Comunicado oficial N.º ${c.num} · PIBEX 2026 · Bariloche</span><h3>${esc(c.data.title)}</h3></div></div>
     <div class="body">${docBody(c.data.body)}</div>
-    <p class="sign">Comisión Organizativa Creativa Barilochense${c.author!=="Comisión"?` · firmado por ${esc(c.author)}`:""} ${delBtn(c)}</p>
-    ${thread(c.id)}
-  </article>`).join("")}`;
+    <p class="sign">${c.author!=="Comisión"&&isIn("economica",c.author)?"Comisión Organizativa Económica":"Comisión Organizativa Creativa Barilochense"}${c.author!=="Comisión"?` · firmado por ${esc(c.author)}`:""} ${c.id.startsWith("seed")?"":delBtn(c)}</p>
+    ${thread(c.id)}</article>`).join("")}`;
 },
 
 cronograma(){
-  const evs = allEvents();
-  return `<div class="head"><span class="eyebrow">Programa general · 24 al 31 de octubre</span><h2>Cronograma</h2><p>Cualquiera puede proponer un plan. Tocá «Me sumo» para que se sepa cuántos van.</p></div>
+  const evs=allEvents(); const org=ME&&isOrg(ME.name);
+  const pend=evs.filter(e=>!e.fixed&&e.status==="pendiente");
+  const rej=evs.filter(e=>!e.fixed&&e.status==="rechazado"&&(org||(ME&&e.item.author===ME.name)));
+  return `<div class="head"><span class="eyebrow">Programa general · 24 al 31 de octubre</span><h2>Cronograma</h2><p>Cualquiera propone; la organización valida. Lo aprobado entra al programa oficial.</p></div>
   <form class="sheet" data-form="event"><span class="eyebrow">Proponer un plan</span>
     <div class="fgrid">
       <div class="field"><label for="ev-d">Día</label><select id="ev-d" name="day">${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div>
-      <div class="field"><label for="ev-h">Hora</label><input type="time" id="ev-h" name="time"></div>
-    </div>
+      <div class="field"><label for="ev-h">Hora</label><input type="time" id="ev-h" name="time"></div></div>
     <div class="field"><label for="ev-t">Qué</label><input type="text" id="ev-t" name="title" required placeholder="Ej: Catamarán a Isla Victoria"></div>
     <div class="field"><label for="ev-x">Detalle</label><input type="text" id="ev-x" name="desc" placeholder="Precio, punto de encuentro, qué llevar"></div>
-    <div><button class="btn">Agregar al cronograma</button></div>
-  </form>
-  ${DAYS.map(([d,l])=>{ const list=evs.filter(e=>e.day===d).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
-    return `<section class="day"><div class="dayhead"><h3>${l}</h3><span class="eyebrow">${list.length} ${list.length===1?"plan":"planes"}</span></div>
-    ${list.length?list.map(evHTML).join(""):`<p class="empty">Día libre. Por ahora.</p>`}</section>`;}).join("")}`;
+    <div><button class="btn">${org?"Agregar al programa":"Enviar propuesta"}</button></div></form>
+  ${pend.length?`<section class="org"><span class="eyebrow">Propuestas en revisión · ${pend.length}</span>${pend.map(evHTML).join("")}</section>`:""}
+  ${DAYS.map(([d,l])=>{const list=evs.filter(e=>e.day===d&&(e.fixed||e.status==="ok")).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+    return `<section class="day"><div class="dayhead"><h3>${l}</h3><span class="eyebrow">${list.length} ${list.length===1?"plan":"planes"}</span></div>${list.length?list.map(evHTML).join(""):`<p class="empty">Día libre. Por ahora.</p>`}</section>`;}).join("")}
+  ${rej.length?`<section class="sheet"><span class="eyebrow">Rechazadas</span>${rej.map(e=>`<div class="row between small"><span>${esc(e.title)} · ${esc(e.dayLabel)}</span><span class="muted">${esc(e.item.author)} ${delBtn(e.item)}</span></div>`).join("")}</section>`:""}`;
 },
 
 muro(){
-  const posts = of("post").slice().reverse();
-  return `<div class="head"><span class="eyebrow">Foro general</span><h2>El Muro</h2><p>Ideas, preguntas, chicanas, todo. Cada publicación avisa al celular de todos los que activaron los avisos.</p></div>
+  const posts=of("post").slice().reverse();
+  return `<div class="head"><span class="eyebrow">Foro general</span><h2>El Muro</h2><p>Ideas, preguntas, chicanas, todo. Cada publicación avisa al celular de los que activaron los avisos.</p></div>
   <form class="sheet" data-form="post"><div class="field"><label for="post-t">Publicar</label><textarea id="post-t" name="text" required maxlength="2000" placeholder="¿Quién lleva el parlante?"></textarea></div><div><button class="btn">Publicar</button></div></form>
   ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${delBtn(p)}</div><div class="txt">${esc(p.data.text)}</div>${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
 },
 
 fotos(){
-  const ph = of("photo").slice().reverse();
-  return `<div class="head"><span class="eyebrow">Archivo audiovisual</span><h2>Fotos del viaje</h2><p>Suban todo. Las fotos se achican automáticamente para que carguen rápido.</p></div>
+  let ph=of("photo").slice().reverse(); if(PHOTO_SORT==="top") ph.sort((a,b)=>likes(b.id).length-likes(a.id).length);
+  return `<div class="head"><span class="eyebrow">Archivo audiovisual</span><h2>Fotos y videos</h2><p>Elegí varias de una: fotos y videos juntos. En el celu, «Compartir» abre WhatsApp, Instagram (historia o post) y el resto de tus apps.</p></div>
   <form class="sheet" data-form="photo"><div class="fgrid">
-    <div class="field"><label for="ph-f">Fotos</label><input type="file" id="ph-f" name="files" accept="image/*" multiple required></div>
-    <div class="field"><label for="ph-c">Epígrafe (opcional)</label><input type="text" id="ph-c" name="caption" maxlength="140"></div></div>
-    <div class="row"><button class="btn" id="ph-btn">Subir</button><span class="muted small" id="ph-status"></span></div></form>
-  ${ph.length?`<div class="photos">${ph.map(p=>`<button class="ph" data-act="photo" data-id="${p.id}"><img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy"><span>${esc(p.data.caption||p.author)}</span></button>`).join("")}</div>`:`<p class="empty">Todavía no hay fotos. Arranquen con una del 2015 para calentar.</p>`}`;
+    <div class="field"><label for="ph-f">Fotos y videos (podés elegir varios)</label><input type="file" id="ph-f" name="files" accept="image/*,video/*" multiple required></div>
+    <div class="field"><label for="ph-c">Epígrafe para todas (opcional)</label><input type="text" id="ph-c" name="caption" maxlength="140"></div></div>
+    <div class="row"><button class="btn" id="ph-btn">Subir</button><span class="muted small" id="ph-status">Videos de hasta 50 MB (unos 30 segundos en buena calidad).</span></div></form>
+  ${ph.length?`<div class="row between"><span class="eyebrow">${ph.length} archivos</span><div class="seg"><button data-act="psort" data-id="new" aria-pressed="${PHOTO_SORT==="new"}">Recientes</button><button data-act="psort" data-id="top" aria-pressed="${PHOTO_SORT==="top"}">Más likeadas</button></div></div>
+  <div class="photos">${ph.map(p=>{const n=likes(p.id).length;return `<button class="ph" data-act="photo" data-id="${p.id}">${p.data.type==="video"?`<video src="${esc(p.data.url)}#t=0.5" muted playsinline preload="metadata"></video><span class="play">▶</span>`:`<img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy">`}${n?`<span class="lk">❤️ ${n}</span>`:""}<span>${esc(p.data.caption||p.author)}</span></button>`}).join("")}</div>`:`<p class="empty">Todavía no hay nada. Arranquen con una del 2015 para calentar.</p>`}`;
 },
 
 truco(){
-  const {ind,par}=trucoStats(); const ms=of("truco").slice().reverse();
-  const tbl=(rows,label)=>`<div class="tscroll"><table><thead><tr><th>#</th><th>${label}</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PP</th><th class="num">Pts</th><th class="num">Dif</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr class="${ME&&r.k.split(" & ").includes(ME.name)?"me":""}"><td class="num">${i+1}</td><td>${esc(r.k)}</td><td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pp}</td><td class="num">${r.pf}</td><td class="num">${r.pf-r.pc>0?"+":""}${r.pf-r.pc}</td></tr>`).join("")}</tbody></table></div>`;
+  const {ind,par,ms}=trucoStats();
+  const tbl=(rows,label)=>`<div class="tscroll"><table><thead><tr><th>#</th><th>${label}</th><th class="num">PJ</th><th class="num">PG</th><th class="num">PP</th><th class="num">% Vic</th><th class="num">Pts</th><th class="num">Dif</th><th class="num">Racha</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr class="${ME&&r.k.split(" & ").includes(ME.name)?"me":""}"><td class="num">${i+1}</td><td>${esc(r.k)}</td><td class="num">${r.pj}</td><td class="num">${r.pg}</td><td class="num">${r.pp}</td><td class="num">${pct(r.pg,r.pj)}%</td><td class="num">${r.pf}</td><td class="num">${r.pf-r.pc>0?"+":""}${r.pf-r.pc}</td><td class="num">${r.cur?r.cur+"G":"–"}</td></tr>`).join("")}</tbody></table></div>`;
+  let facts="";
+  if(ms.length){
+    const diff=m=>Math.abs(m.data.s1-m.data.s2); const desc=m=>{const d=m.data;const w=d.s1>d.s2;return `${(w?d.p1:d.p2).join(" & ")} ${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)} a ${(w?d.p2:d.p1).join(" & ")}`};
+    const paliza=ms.slice().sort((a,b)=>diff(b)-diff(a))[0]; const parejo=ms.slice().sort((a,b)=>diff(a)-diff(b))[0];
+    const by=(arr,f)=>arr.slice().sort((a,b)=>f(b)-f(a))[0];
+    const goleador=by(ind,r=>r.pf), vicio=by(ind,r=>r.pj), racha=by(ind,r=>r.best), castigado=by(ind,r=>r.pp);
+    const efic=ind.filter(r=>r.pj>=3).sort((a,b)=>b.pg/b.pj-a.pg/a.pj)[0];
+    const repetida=by(par,r=>r.pj);
+    const f=(l,v,s)=>`<div class="fact"><span class="lbl">${l}</span><b>${esc(v)}</b><span class="small muted">${esc(s)}</span></div>`;
+    facts=`<section class="stack"><h3>Estadísticas del campeonato</h3><div class="facts">
+      ${f("Máxima paliza",paliza.data.p1.concat(paliza.data.p2).length?desc(paliza):"",`Diferencia de ${diff(paliza)} puntos`)}
+      ${ms.length>1?f("El más parejo",desc(parejo),`Se definió por ${diff(parejo)}`):""}
+      ${f("Más puntos a favor",goleador.k,goleador.pf+" puntos en "+goleador.pj+" partidos")}
+      ${f("Mejor racha",racha.k,racha.best+" ganados seguidos")}
+      ${efic?f("Más efectivo (3+ PJ)",efic.k,pct(efic.pg,efic.pj)+"% de victorias"):""}
+      ${f("Vicioso del naipe",vicio.k,vicio.pj+" partidos jugados")}
+      ${castigado.pp?f("El más castigado",castigado.k,castigado.pp+" derrotas"):""}
+      ${f("Pareja más repetida",repetida.k,repetida.pj+" partidos juntos")}
+      ${f("Puntos totales en juego",String(ms.reduce((s,m)=>s+m.data.s1+m.data.s2,0)),ms.length+" partidos")}
+    </div></section>`;
+  }
   return `<div class="head"><span class="eyebrow">Campeonato Patagónico de Truco</span><h2>Truco</h2><p>Partidos a 30 en parejas que se arman como quieran. Ranking por partidos ganados; desempata la diferencia de puntos.</p></div>
   <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido</span>
     <div class="grid2">
@@ -632,21 +869,46 @@ truco(){
     </div><div><button class="btn">Cargar resultado</button></div></form>
   <section class="stack"><h3>Ranking de parejas</h3>${par.length?tbl(par,"Pareja"):`<p class="empty">Sin partidos todavía.</p>`}</section>
   <section class="stack"><h3>Ranking individual</h3>${ind.length?tbl(ind,"Jugador"):`<p class="empty">Sin partidos todavía.</p>`}</section>
-  ${ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(d.p1.join(" & "))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(d.p2.join(" & "))}</b></span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""}`;
+  ${facts}
+  ${ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(d.p1.join(" & "))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(d.p2.join(" & "))}</b></span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""}`;
 },
 
 awards(){
-  const cats=awardCats(); const rev=revealed(); const canRev=ME&&isIn("creativa",ME.name);
-  const voters=new Set(of("vote").map(v=>v.author)).size;
-  return `<div class="head"><span class="eyebrow">Ceremonia de cierre · viernes 30 a la noche</span><h2>PIBEX Choice Awards</h2><p>Votá una vez por categoría (podés cambiar el voto hasta la revelación). Los resultados quedan sellados hasta que la Comisión los revele en la ceremonia.</p></div>
-  <section class="sheet"><div class="row between"><span><span class="big">${voters}</span> <span class="muted">de ${PEOPLE.length} ya votaron</span></span>
-    ${canRev?(rev?`<button class="btn ghost sm" data-act="unreveal">Volver a sellar</button>`:(ARM==="reveal"?`<button class="btn red sm" data-act="reveal">Confirmar: revelar a todos</button>`:`<button class="btn sm" data-act="arm" data-id="reveal">Revelar resultados</button>`)):`<span class="pill ${rev?"ok":"info"}">${rev?"Resultados revelados":"Sobre cerrado"}</span>`}</div></section>
-  <div class="grid2">${cats.map(c=>{const mv=myVote(c.id);const t=tally(c.id);const max=t[0]?t[0][1]:1;
-    return `<section class="sheet aw"><h3>${esc(c.title)}</h3>${c.by?`<span class="muted small">Propuesta por ${esc(c.by)} ${delBtn(c.item)}</span>`:""}
-      ${rev?`<div class="res">${t.length?t.slice(0,3).map(([n,v],i)=>`<div class="r"><span>${i===0?"🏆 ":""}${esc(n)}</span><i style="width:${v/max*100}%"></i><span class="mono">${v}</span></div>`).join(""):`<p class="empty">Sin votos.</p>`}</div>`
-        :`<select data-vote="${esc(c.id)}" id="v-${esc(c.id).replace(/[^\w-]/g,"_")}" aria-label="Tu voto: ${esc(c.title)}">${personOpts(mv?mv.data.nominee:"","Tu voto…")}</select>`}
-    </section>`}).join("")}</div>
-  ${rev?"":`<form class="sheet" data-form="award_cat"><span class="eyebrow">Proponer categoría nueva</span><div class="cform"><input type="text" id="aw-new" name="title" placeholder="Ej: El que más veces dijo «una y nos vamos»" required maxlength="80"><button class="btn sm">Proponer</button></div></form>`}`;
+  const cfg=awardsCfg(); const org=ME&&isOrg(ME.name); const voters=new Set(of("vote").map(v=>v.author)).size;
+  const head=`<div class="head"><span class="eyebrow">Ceremonia de cierre · viernes 30 a la noche</span><h2>PIBEX Choice Awards</h2></div>`;
+  const panel = org?`<section class="org"><span class="eyebrow">Panel de la organización · solo lo ven ustedes 6</span>
+    ${cfg.phase==="hidden"?`<p class="small">Las categorías están ocultas para el resto. Editen, borren o sumen, y cuando estén conformes habiliten la votación.</p>
+      ${cfg.cats.map(c=>`<div class="catedit"><input type="text" id="cat-${c.id}" data-cat="${c.id}" value="${esc(c.title)}" aria-label="Categoría"><button class="link danger" data-act="catdel" data-id="${c.id}">quitar</button></div>`).join("")}
+      <div class="catedit"><input type="text" id="cat-new" placeholder="Nueva categoría" aria-label="Nueva categoría"><button class="btn sm" data-act="catadd">Sumar</button></div>
+      <div class="row"><button class="btn ghost sm" data-act="catsave">Guardar cambios</button>${armBtn("aw-open","Habilitar votación para todos","Confirmar: habilitar votación","aw-open")}</div>`
+    :cfg.phase==="voting"?`<p class="small">Votación abierta. ${voters} de ${PEOPLE.length} votaron.</p><div class="row">${armBtn("aw-reveal","Revelar resultados","Confirmar: revelar a todos","aw-reveal")}<button class="btn ghost sm" data-act="aw-hide">Volver a ocultar</button></div>`
+    :`<div class="row"><button class="btn ghost sm" data-act="aw-reopen">Volver a votación</button></div>`}
+  </section>`:"";
+  if(cfg.phase==="hidden") return head+panel+`<section class="sheet official"><span class="eyebrow">Sobre lacrado</span><h3>${cfg.cats.length} categorías en deliberación</h3><p class="muted">La organización está definiendo las ternas. Cuando las habilite, te llega el aviso y podés votar.</p><div class="sealed">${cfg.cats.map(()=>`<div>?</div>`).join("")}</div></section>`;
+  const rev=cfg.phase==="revealed";
+  return head+panel+`<section class="sheet"><div class="row between"><span><span class="big">${voters}</span> <span class="muted">de ${PEOPLE.length} ya votaron</span></span><span class="pill ${rev?"ok":"info"}">${rev?"Resultados revelados":"Voto secreto hasta la ceremonia"}</span></div>${rev?"":`<p class="small muted">Votá una vez por categoría. Podés cambiar el voto hasta la revelación.</p>`}</section>
+  <div class="grid2">${cfg.cats.map(c=>{const mv=myVote(c.id);const t=tally(c.id);const max=t[0]?t[0][1]:1;
+    return `<section class="sheet aw"><h3>${esc(c.title)}</h3>${rev?`<div class="res">${t.length?t.slice(0,3).map(([n,v],i)=>`<div class="r"><span>${i===0?"🏆 ":""}${esc(n)}</span><i style="width:${v/max*100}%"></i><span class="mono">${v}</span></div>`).join(""):`<p class="empty">Sin votos.</p>`}</div>`
+      :`<select data-vote="${esc(c.id)}" id="v-${esc(c.id)}" aria-label="Tu voto: ${esc(c.title)}">${personOpts(mv?mv.data.nominee:"","Tu voto…")}</select>`}</section>`}).join("")}</div>`;
+},
+
+cuartos(){
+  const cfg=roomsCfg(); const org=ME&&isOrg(ME.name); const cap=cfg.rooms.reduce((s,r)=>s+Number(r.cap||0),0);
+  const drawn=!!cfg.drawnAt; const sinCuarto=drawn?PEOPLE.filter(p=>!cfg.assign[p]):[];
+  const panel=org?`<section class="org"><span class="eyebrow">Panel de la organización</span>
+    ${cfg.rooms.length?cfg.rooms.map(r=>`<div class="row between small"><span><b>${esc(r.name)}</b> · ${r.cap} camas</span><button class="link danger" data-act="roomdel" data-id="${r.id}">quitar</button></div>`).join(""):`<p class="small">Carguen los cuartos de la mansión con sus camas.</p>`}
+    <form class="fgrid" data-form="room"><input type="text" id="rm-n" name="name" placeholder="Nombre (ej: Suite del lago)" required aria-label="Nombre del cuarto"><input type="number" id="rm-c" name="cap" min="1" max="12" placeholder="Camas" required aria-label="Camas"><button class="btn sm">Agregar cuarto</button></form>
+    <p class="small ${cap<PEOPLE.length?"":"muted"}">Camas cargadas: <b>${cap}</b> para ${PEOPLE.length} personas.${cap<PEOPLE.length&&cfg.rooms.length?" Los que sobren quedan en el living.":""}</p>
+    ${cfg.rooms.length?`<div class="row">${armBtn("rm-draw",drawn?"Volver a sortear":"Hacer el sorteo",drawn?"Confirmar: se pierde el sorteo actual":"Confirmar sorteo","rm-draw")}</div>`:""}
+    ${drawn?`<form class="fgrid" data-form="swap"><select id="sw-a" name="a" aria-label="Persona 1">${personOpts("","Intercambiar a…")}</select><select id="sw-b" name="b" aria-label="Persona 2">${personOpts("","…con")}</select><button class="btn ghost sm">Intercambiar</button></form>`:""}
+  </section>`:"";
+  return `<div class="head"><span class="eyebrow">Distribución habitacional · por sorteo</span><h2>Cuartos</h2><p>Dónde duerme cada uno. Lo sortea la organización y es inapelable (salvo coima en fernet).</p></div>
+  ${panel}
+  ${!drawn?`<section class="sheet official"><span class="eyebrow">Estado</span><h3>Sorteo pendiente</h3><p class="muted">${cfg.rooms.length?`Hay ${cfg.rooms.length} cuartos cargados. La organización avisa cuando se sortea.`:"Todavía no está definido cómo es la mansión por dentro."}</p></section>`
+  :`<section class="sheet"><div class="row between"><span class="small muted">Sorteado ${ago(cfg.drawnAt)} por ${esc(cfg.drawnBy||"la organización")}</span><button class="btn ghost sm" data-act="replay">▶ Revivir el sorteo</button></div></section>
+   <div class="rooms" id="rooms">${cfg.rooms.map(r=>{const ps=PEOPLE.filter(p=>cfg.assign[p]===r.id);const mine=ME&&ps.includes(ME.name);
+     return `<section class="room ${mine?"mine":""}"><span class="eyebrow">${ps.length}/${r.cap} camas${mine?" · tu cuarto":""}</span><h3>${esc(r.name)}</h3><div class="names">${ps.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}" data-p="${esc(p)}">${esc(emojiOf(p))} ${esc(p)}</span>`).join("")}</div></section>`}).join("")}
+     ${sinCuarto.length?`<section class="room"><span class="eyebrow">Sin cama asignada</span><h3>Living</h3><div class="names">${sinCuarto.map(p=>`<span class="name ${ME&&p===ME.name?"me":""}" data-p="${esc(p)}">${esc(p)}</span>`).join("")}</div></section>`:""}</div>`}`;
 },
 
 vuelos(){
@@ -655,10 +917,10 @@ vuelos(){
   const arrivals=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0]));
   const dgroups={}; fs.filter(f=>f.vs).forEach(f=>{(dgroups[f.vs]=dgroups[f.vs]||[]).push(f)});
   const deps=Object.entries(dgroups).sort((a,b)=>a[0].localeCompare(b[0]));
-  const missing=fs.filter(f=>!f.il||!f.vs||!f.iv||!f.vv);
-  const mine=ME&&fs.find(f=>f.n===ME.name);
-  const c=v=>v?esc(v):`<span class="pill bad">falta</span>`;
-  return `<div class="head"><span class="eyebrow">Logística aérea · Aeropuerto BRC</span><h2>Vuelos</h2><p>Llegadas agrupadas por hora para organizar quién busca a quién. Datos de la planilla; cada uno puede corregir el suyo.</p></div>
+  const missing=fs.filter(f=>!f.il||!f.vs||!f.iv||!f.vv); const mine=ME&&fs.find(f=>f.n===ME.name);
+  const c=v=>v?esc(v):`<span class="pill bad">falta</span>`; const tv=v=>/^\d\d:\d\d$/.test(v||"")?v:"";
+  const blk=(t,l)=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(x=>x).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span></div></div>`;
+  return `<div class="head"><span class="eyebrow">Logística aérea · Aeropuerto BRC</span><h2>Vuelos</h2><p>Llegadas agrupadas por hora para organizar quién busca a quién. Cada uno puede corregir el suyo.</p></div>
   <div class="grid2">
     <section class="sheet"><span class="eyebrow">Llegadas · sábado 24</span>${arrivals.map(([t,l])=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(f=>f.iv).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span><div class="names">${l.map(f=>`<span class="name">${esc(f.n)}</span>`).join("")}</div></div></div>`).join("")}</section>
     <section class="sheet"><span class="eyebrow">Salidas · sábado 31</span>${deps.map(([t,l])=>`<div class="arr"><span class="t">${t}</span><div class="stack" style="gap:4px"><span class="mono small muted">${esc([...new Set(l.map(f=>f.vv).filter(Boolean))].join(" · ")||"vuelo sin cargar")}</span><div class="names">${l.map(f=>`<span class="name">${esc(f.n)}</span>`).join("")}</div></div></div>`).join("")}</section>
@@ -667,14 +929,13 @@ vuelos(){
   <section class="stack"><h3>Tabla completa</h3><div class="tscroll"><table><thead><tr><th>Nombre</th><th>Ida</th><th class="num">Sale</th><th class="num">Llega</th><th>Vuelta</th><th class="num">Sale</th><th class="num">Llega</th></tr></thead><tbody>
   ${fs.map(f=>`<tr class="${ME&&f.n===ME.name?"me":""}"><td>${esc(f.n)}${f.upd?` <span class="pill info">actualizado</span>`:""}</td><td class="mono">${c(f.iv)}</td><td class="num">${c(f.is)}</td><td class="num">${c(f.il)}</td><td class="mono">${c(f.vv)}</td><td class="num">${c(f.vs)}</td><td class="num">${c(f.vl)}</td></tr>`).join("")}
   </tbody></table></div></section>
-  ${mine?`<form class="sheet" data-form="vuelo"><span class="eyebrow">Actualizar mi vuelo · ${esc(ME.name)}</span>
-    <div class="fgrid">
+  ${mine?`<form class="sheet" data-form="vuelo"><span class="eyebrow">Actualizar mi vuelo · ${esc(ME.name)}</span><div class="fgrid">
       <div class="field"><label for="vf-iv">Vuelo ida</label><input type="text" id="vf-iv" name="iv" value="${esc(mine.iv||"")}"></div>
-      <div class="field"><label for="vf-is">Sale</label><input type="time" id="vf-is" name="is" value="${esc(/^\d\d:\d\d$/.test(mine.is||"")?mine.is:"")}"></div>
-      <div class="field"><label for="vf-il">Llega BRC</label><input type="time" id="vf-il" name="il" value="${esc(/^\d\d:\d\d$/.test(mine.il||"")?mine.il:"")}"></div>
+      <div class="field"><label for="vf-is">Sale</label><input type="time" id="vf-is" name="is" value="${tv(mine.is)}"></div>
+      <div class="field"><label for="vf-il">Llega BRC</label><input type="time" id="vf-il" name="il" value="${tv(mine.il)}"></div>
       <div class="field"><label for="vf-vv">Vuelo vuelta</label><input type="text" id="vf-vv" name="vv" value="${esc(mine.vv||"")}"></div>
-      <div class="field"><label for="vf-vs">Sale BRC</label><input type="time" id="vf-vs" name="vs" value="${esc(mine.vs||"")}"></div>
-      <div class="field"><label for="vf-vl">Llega</label><input type="time" id="vf-vl" name="vl" value="${esc(mine.vl||"")}"></div>
+      <div class="field"><label for="vf-vs">Sale BRC</label><input type="time" id="vf-vs" name="vs" value="${tv(mine.vs)}"></div>
+      <div class="field"><label for="vf-vl">Llega</label><input type="time" id="vf-vl" name="vl" value="${tv(mine.vl)}"></div>
     </div><div><button class="btn">Guardar mi vuelo</button></div></form>`:""}`;
 },
 
@@ -698,7 +959,7 @@ plata(){
     <td class="num">${x.f?ars(x.f.paid):"—"}</td><td>${x.f?statusPill(x.f.paid,x.f.total):`<span class="pill info">sin datos</span>`}</td></tr>`).join("")}
   </tbody></table></div>
   <p class="muted small">Base: planilla Bariloche PIBEX 2026 (último pago cargado el 7/10). Lo que registra la Comisión Económica acá se suma arriba.</p>
-  ${canPay?`<form class="sheet" data-form="pago"><span class="eyebrow">Registrar pago (solo Comisión Económica)</span><div class="fgrid">
+  ${canPay?`<form class="sheet" data-form="pago"><span class="eyebrow">Registrar pago (Comisión Económica)</span><div class="fgrid">
     <div class="field"><label for="pg-p">Quién</label><select id="pg-p" name="person" required>${personOpts()}</select></div>
     <div class="field"><label for="pg-c">Concepto</label><select id="pg-c" name="concept"><option value="hosp">Hospedaje (USD)</option><option value="fondo">Fondo ($)</option></select></div>
     <div class="field"><label for="pg-a">Monto</label><input type="number" id="pg-a" name="amount" required step="any"></div></div><div><button class="btn">Registrar</button></div></form>`:""}
@@ -709,7 +970,7 @@ lugares(){
   const sug=of("place");
   return `<div class="head"><span class="eyebrow">Guía de campo</span><h2>Lugares</h2><p>Cada lugar abre en Google Maps. La lista es un punto de partida: sumen los que descubran.</p></div>
   <section class="sheet official"><div class="row between"><div><span class="eyebrow">Base de operaciones</span><h3>La Mansión</h3></div><a class="btn" href="${mapsUrl(CONFIG.MANSION)}" target="_blank" rel="noopener">Abrir en Maps</a></div>
-    <p class="muted small">Desde Maps, buscá «supermercado» o «farmacia» y te ordena por cercanía a la mansión.</p></section>
+    <p class="muted small">Desde Maps, buscá «supermercado» o «farmacia» y te ordena por cercanía.</p></section>
   <div class="grid2">${PLACES.map(g=>`<section class="sheet"><span class="eyebrow">${esc(g.cat)}</span><div class="places">${g.items.map(([n,d])=>`<div class="pl"><div><div class="n">${esc(n)}</div><div class="d">${esc(d)}</div></div><a href="${mapsUrl(mapsQ(n))}" target="_blank" rel="noopener">MAPA ↗</a></div>`).join("")}</div></section>`).join("")}
   ${sug.length?`<section class="sheet"><span class="eyebrow">Sugeridos por la tropa</span><div class="places">${sug.map(p=>`<div class="pl"><div><div class="n">${esc(p.data.name)}</div><div class="d">${esc(p.data.note||"")} · ${esc(p.author)} ${delBtn(p)}</div></div><a href="${mapsUrl(mapsQ(p.data.name))}" target="_blank" rel="noopener">MAPA ↗</a></div>`).join("")}</div></section>`:""}</div>
   <form class="sheet" data-form="place"><span class="eyebrow">Sugerir un lugar</span><div class="fgrid">
@@ -717,59 +978,41 @@ lugares(){
     <div class="field"><label for="pl-d">Por qué</label><input type="text" id="pl-d" name="note"></div></div><div><button class="btn">Sugerir</button></div></form>`;
 },
 
-compras(){
-  const list=of("compra"); const pend=list.filter(i=>!i.data.done), done=list.filter(i=>i.data.done);
-  const row=i=>`<div class="chk ${i.data.done?"done":""}"><input type="checkbox" id="ck-${i.id}" data-act="check" data-id="${i.id}" ${i.data.done?"checked":""}><label class="t" for="ck-${i.id}">${esc(i.data.text)}</label><span class="muted small">${esc(i.author)}</span>${delBtn(i)}</div>`;
-  return `<div class="head"><span class="eyebrow">Proveeduría · Green Team + Económica</span><h2>Lista de compras</h2><p>Lo que hay que llevar o comprar. El que lo compra, lo tilda.</p></div>
-  <form class="sheet" data-form="compra"><div class="cform"><input type="text" id="cp-t" name="text" required placeholder="Ej: 20 kg de hielo, carbón, fernet, yerba" maxlength="120"><button class="btn sm">Agregar</button></div></form>
-  <section class="sheet"><span class="eyebrow">Pendiente · ${pend.length}</span>${pend.length?pend.map(row).join(""):`<p class="empty">Nada pendiente.</p>`}</section>
-  ${done.length?`<section class="sheet"><span class="eyebrow">Resuelto · ${done.length}</span>${done.map(row).join("")}</section>`:""}`;
-},
-
 comisiones(){
-  const isCre=ME&&isIn("creativa",ME.name);
+  const org=ME&&isOrg(ME.name); const isCre=ME&&isIn("creativa",ME.name);
   const sorp=of("sorpresa"); const mine=ME?sorp.filter(s=>s.author===ME.name):[];
-  return `<div class="head"><span class="eyebrow">Organigrama institucional</span><h2>Comisiones</h2><p>Las autoridades electas por aclamación. Hay cargos vacantes: postulate.</p></div>
-  ${Object.entries(COM).map(([k,c])=>`<section class="sheet com"><span class="eyebrow">En funciones</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.mandate)}</p><div class="names">${c.members.map(n=>`<span class="name">${esc(emojiOf(n))} ${esc(n)}</span>`).join("")}</div></section>`).join("")}
-  <div class="grid2">${VACANTES.map(v=>{const ps=refs("postulacion",v.id);const yo=ME&&ps.find(p=>p.author===ME.name);
-    return `<section class="sheet com vac"><span class="eyebrow">Cargo vacante</span><h3>${esc(v.name)}</h3><p class="muted small">${esc(v.mandate)}</p>
-    ${ps.length?`<div class="names">${ps.map(p=>`<span class="name">${esc(p.author)}</span>`).join("")}</div>`:`<p class="empty">Sin postulantes.</p>`}
-    <div>${yo?`<button class="btn ghost sm" data-act="del" data-id="${yo.id}">Bajar mi candidatura</button>`:`<button class="btn sm" data-act="postular" data-id="${v.id}">Postularme</button>`}</div></section>`}).join("")}</div>
+  return `<div class="head"><span class="eyebrow">Organigrama institucional</span><h2>Comisiones</h2><p>Las autoridades electas por aclamación. Hay cargos vacantes: postulate y la organización decide.</p></div>
+  ${Object.values(COM).map(c=>`<section class="sheet com"><span class="eyebrow">En funciones</span><h3>${esc(c.name)}</h3><p class="muted">${esc(c.mandate)}</p><div class="names">${c.members.map(n=>`<span class="name">${esc(emojiOf(n))} ${esc(n)}</span>`).join("")}</div></section>`).join("")}
+  <div class="grid2">${VACANTES.map(v=>{const ps=refs("postulacion",v.id);const ok=ps.filter(p=>p.data.status==="ok");const pend=ps.filter(p=>p.data.status!=="ok");const yo=ME&&ps.find(p=>p.author===ME.name);
+    return `<section class="sheet com ${ok.length?"":"vac"}"><span class="eyebrow">${ok.length?"En funciones":"Cargo vacante"}</span><h3>${esc(v.name)}</h3><p class="muted small">${esc(v.mandate)}</p>
+    ${ok.length?`<div class="names">${ok.map(p=>`<span class="name">${esc(emojiOf(p.author))} ${esc(p.author)}</span>`).join("")}</div>`:""}
+    ${pend.length?`<div class="stack" style="gap:6px"><span class="eyebrow">Candidaturas en revisión</span>${pend.map(p=>`<div class="row between small"><span>${esc(p.author)}</span>${org?`<span class="row"><button class="btn sm" data-act="post-ok" data-id="${p.id}">Designar</button><button class="link danger" data-act="del" data-id="${p.id}">rechazar</button></span>`:""}</div>`).join("")}</div>`:(ok.length?"":`<p class="empty">Sin postulantes.</p>`)}
+    <div>${yo?(yo.data.status==="ok"?"":`<button class="btn ghost sm" data-act="del" data-id="${yo.id}">Bajar mi candidatura</button>`):`<button class="btn sm" data-act="postular" data-id="${v.id}">Postularme</button>`}</div></section>`}).join("")}</div>
   <section class="sheet official"><span class="eyebrow">Programa de las Sorpresas</span><h3>Buzón de la Comisión</h3>
-    <p class="muted">Solo si tu sorpresa necesita organización (reservar algo, apartar un horario). Lo leen únicamente las autoridades de la Comisión Creativa. El resto, hacelo sin avisar.</p>
+    <p class="muted">Solo si tu sorpresa necesita organización (reservar algo, apartar un horario). Lo lee únicamente la Comisión Creativa. El resto, hacelo sin avisar.</p>
     <form class="stack" data-form="sorpresa"><div class="field"><label for="sp-q">Qué necesitás</label><textarea id="sp-q" name="text" required placeholder="Ej: necesito 40 minutos el jueves a la noche y que nadie use el quincho"></textarea></div>
     <div class="field"><label for="sp-w">Para cuándo</label><select id="sp-w" name="day"><option value="">Sin día fijo</option>${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div><div><button class="btn">Enviar a la Comisión</button></div></form>
-    ${isCre?`<div class="stack"><span class="eyebrow">Expedientes recibidos · ${sorp.length}</span>${sorp.length?sorp.map(s=>`<div class="sheet" style="background:var(--paper)"><div class="row between small"><b>${esc(s.author)}</b><span class="muted">${s.data.day?esc(DAYS.find(d=>d[0]===s.data.day)?.[1]):"sin día"} · ${ago(s.created_at)}</span></div><p>${esc(s.data.text)}</p></div>`).join(""):`<p class="empty">Buzón vacío.</p>`}</div>`
+    ${isCre?`<div class="stack"><span class="eyebrow">Expedientes recibidos · ${sorp.length}</span>${sorp.length?sorp.map(s=>`<div class="sheet" style="background:var(--paper)"><div class="row between small"><b>${esc(s.author)}</b><span class="muted">${s.data.day?esc(dayLabel(s.data.day)):"sin día"} · ${ago(s.created_at)}</span></div><p>${esc(s.data.text)}</p></div>`).join(""):`<p class="empty">Buzón vacío.</p>`}</div>`
       :(mine.length?`<p class="small"><span class="pill ok">Recibido</span> Tenés ${mine.length} ${mine.length===1?"expediente":"expedientes"} en el buzón.</p>`:"")}
   </section>`;
 }
 };
 
-/* ---- Cronograma: fijos + cargados ---- */
-function allEvents(){
-  const fs=flights(); const fixed=[];
-  const arr={}; fs.filter(f=>f.il&&f.il!=="—").forEach(f=>{(arr[f.il]=arr[f.il]||[]).push(f.n)});
-  Object.entries(arr).forEach(([t,ns])=>fixed.push({id:"fx-in-"+t,fixed:true,day:"2026-10-24",time:t,title:"Aterrizan en BRC",desc:ns.join(", ")}));
-  const dep={}; fs.filter(f=>f.vs).forEach(f=>{(dep[f.vs]=dep[f.vs]||[]).push(f.n)});
-  Object.entries(dep).forEach(([t,ns])=>fixed.push({id:"fx-out-"+t,fixed:true,day:"2026-10-31",time:t,title:"Despegan de BRC",desc:ns.join(", ")}));
-  fixed.push({id:"fx-awards",fixed:true,day:"2026-10-30",time:"22:00",title:"Ceremonia PIBEX Choice Awards",desc:"Revelación de resultados y entrega de premios. Horario a confirmar por la Comisión."});
-  const user=of("event").map(e=>({...e.data,id:e.id,item:e}));
-  return [...fixed,...user].map(e=>{const dl=DAYS.find(d=>d[0]===e.day);return {...e,dayLabel:dl?dl[1]:e.day,when:e.time?new Date(e.day+"T"+e.time+":00-03:00").getTime():null}});
-}
 function evHTML(e){
   if(e.fixed) return `<div class="ev fixed"><span class="t">${esc(e.time||"")}</span><div class="body"><span class="ttl">${esc(e.title)}</span><span class="muted small">${esc(e.desc)}</span></div></div>`;
-  const js=refs("join",e.id); const yo=ME&&js.find(j=>j.author===ME.name);
-  const n=refs("comment",e.id).length;
+  const js=refs("join",e.id); const yo=ME&&js.find(j=>j.author===ME.name); const n=refs("comment",e.id).length; const org=ME&&isOrg(ME.name);
+  const pend=e.status==="pendiente";
   return `<div class="ev"><span class="t">${esc(e.time||"—")}</span><div class="body">
-    <span class="ttl">${esc(e.title)}</span>${e.desc?`<span class="small">${esc(e.desc)}</span>`:""}
-    <span class="muted small">Propuso ${esc(e.item.author)} ${delBtn(e.item)}</span>
-    <div class="row"><button class="btn ${yo?"":"ghost"} sm" data-act="join" data-id="${e.id}">${yo?"✓ Voy":"Me sumo"}</button>${js.length?`<span class="small">${js.length} van: <span class="muted">${esc(js.map(j=>j.author).join(", "))}</span></span>`:""}
+    <div class="row"><span class="ttl">${esc(e.title)}</span>${pend?`<span class="pill warn">propuesta · ${esc(e.dayLabel)}</span>`:""}</div>
+    ${e.desc?`<span class="small">${esc(e.desc)}</span>`:""}
+    <span class="muted small">Propuso ${esc(e.item.author)}${e.item.data.by?` · validó ${esc(e.item.data.by)}`:""} ${delBtn(e.item)}</span>
+    ${pend&&org?`<div class="row"><button class="btn sm" data-act="ev-ok" data-id="${e.id}">Aprobar</button><button class="btn ghost sm" data-act="ev-no" data-id="${e.id}">Rechazar</button></div>`:""}
+    <div class="row"><button class="btn ${yo?"":"ghost"} sm" data-act="join" data-id="${e.id}">${yo?"✓ Voy":pend?"Me interesa":"Me sumo"}</button>${js.length?`<span class="small">${js.length}: <span class="muted">${esc(js.map(j=>j.author).join(", "))}</span></span>`:""}
     <button class="link" data-act="toggle" data-id="${e.id}">${OPEN.has("ev"+e.id)?"Ocultar":"Comentarios"}${n?` (${n})`:""}</button></div>
     ${OPEN.has("ev"+e.id)?thread(e.id):""}
   </div></div>`;
 }
 
-/* ---- Countdown ---- */
 function countdownHTML(){
   const now=Date.now();
   if(now<TRIP_START){ const s=Math.floor((TRIP_START-now)/1000); const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
@@ -777,108 +1020,169 @@ function countdownHTML(){
   if(now<=TRIP_END){ const d=Math.floor((now-TRIP_START)/86400000)+1; return `<div><div class="n">Día ${d}</div><div class="u">de 8 · estamos en Bariloche</div></div>`; }
   return `<div><div class="n">Fin</div><div class="u">hasta el próximo PIBEX</div></div>`;
 }
-setInterval(()=>{const el=$("#countdown");if(el)el.innerHTML=countdownHTML();const lb=$("#cd-label");if(lb&&Date.now()>=TRIP_START)lb.textContent="PIBEX en curso";},30000);
+setInterval(()=>{const el=$("#countdown");if(el)el.innerHTML=countdownHTML();},30000);
 
 /* ================= Modales ================= */
 function modal(html){ $("#overlay").innerHTML=`<div class="modal" data-act="close-bg"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`; }
-function closeModal(){ $("#overlay").innerHTML=""; }
+function closeModal(){ $("#overlay").innerHTML=""; if(PENDING) render(); }
 let pickName=null, pickEmoji=null;
-function loginModal(){
-  pickName=ME?ME.name:null; pickEmoji=ME?ME.emoji:EMOJIS[0];
-  modal(`<span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>¿Quién sos?</h3>
-    <p class="muted small">Sin clave ni mail. Tu nombre queda guardado en este celular y firma todo lo que publiques.</p>
-    ${CONFIG.CLAVE_GRUPO && !(lsGet("pibex_ok")) ? `<div class="field"><label for="lg-k">Palabra clave del grupo</label><input type="password" id="lg-k" autocomplete="off"></div>`:""}
-    <div class="chips" id="lg-names">${PEOPLE.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${esc(p)}</button>`).join("")}</div>
-    <span class="eyebrow">Tu escudo</span>
-    <div class="chips emojis">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}">${e}</button>`).join("")}</div>
-    <div class="row"><button class="btn" data-act="login-ok">Entrar</button>${ME?`<button class="btn ghost" data-act="close">Cancelar</button>`:""}</div>
-    <p class="muted small" id="lg-err"></p>`);
+function loginModal(){ pickName=ME?ME.name:null; pickEmoji=null; paintLogin(); }
+function paintLogin(){
+  const claimed=!!(pickName&&PERFILES[pickName]);
+  const taken=new Set(Object.entries(PERFILES).filter(([n])=>n!==pickName).map(([,e])=>e));
+  modal(`<div class="dochead"><img class="seal" src="logo.png" alt="" width="54" height="54"><div class="stack" style="gap:2px"><span class="eyebrow">Control migratorio · PIBEX 2026</span><h3>¿Quién sos?</h3></div></div>
+    <p class="muted small">Cada nombre se reclama una sola vez con un PIN de 4 números. Después nadie más puede entrar como vos. 🔒 = ya reclamado.</p>
+    <div class="chips">${PEOPLE.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${PERFILES[p]?esc(PERFILES[p])+" ":""}${esc(p)}${PERFILES[p]?'<span class="lock">🔒</span>':""}</button>`).join("")}</div>
+    ${pickName?(claimed?`
+      <div class="field"><label for="lg-pin">PIN de ${esc(pickName)}</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
+      <details><summary class="small">Cambiar mi escudo</summary><div class="chips emojis" style="margin-top:8px">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}" ${taken.has(e)?"disabled":""}>${e}</button>`).join("")}</div></details>
+      <p class="muted small">¿Te olvidaste el PIN? Pedile a la organización que te lo resetee.</p>`
+    :`<span class="eyebrow">Primera vez · elegí tu escudo (es único)</span>
+      <div class="chips emojis">${EMOJIS.map(e=>`<button type="button" class="chipbtn" data-emoji="${e}" aria-pressed="${e===pickEmoji}" ${taken.has(e)?"disabled":""}>${e}</button>`).join("")}</div>
+      <div class="fgrid"><div class="field"><label for="lg-pin">Inventá un PIN</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
+      <div class="field"><label for="lg-pin2">Repetilo</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin2" autocomplete="off"></div></div>`):""}
+    <div class="row"><button class="btn" data-act="login-ok" ${pickName?"":"disabled"}>${claimed?"Entrar":"Reclamar mi nombre"}</button>${ME?`<button class="btn ghost" data-act="close">Cancelar</button>`:""}${ME?`<button class="link danger" data-act="logout">Salir de este celu</button>`:""}</div>
+    <p class="small" id="lg-err" style="color:var(--stamp)"></p>`);
 }
 function notifModal(){
-  modal(`<span class="eyebrow">Avisos al celular</span><h3>Enterate de todo</h3>
-    ${CONFIG.NTFY_TOPIC?`<ol class="stack" style="padding-left:18px;margin:0">
-      <li>Bajá la app gratuita <b>ntfy</b> (App Store o Google Play).</li>
-      <li>Tocá <b>+</b> y suscribite a este tema:</li></ol>
-      <div class="copybox"><code>${esc(CONFIG.NTFY_TOPIC)}</code><button class="btn ghost sm" data-act="copy" data-text="${esc(CONFIG.NTFY_TOPIC)}">Copiar</button></div>
-      <p class="muted small">Te llega un aviso cada vez que alguien publica en el muro, comenta, propone un plan, sube fotos, carga un truco o sale un comunicado.</p>`
-    :`<p class="muted">Los avisos se activan cuando la Comisión configure el tema de notificaciones (app ntfy). En esta vista previa están apagados.</p>`}
+  modal(`<span class="eyebrow">Tenela como app</span><h3>Agregá PIBEX a tu pantalla de inicio</h3>
+    <p class="muted small">Queda con ícono propio y se abre a pantalla completa, como una app. Sin bajar nada de ningún store.</p>
+    <div class="stack"><b>iPhone (Safari)</b><ol style="margin:0;padding-left:18px"><li>Tocá el botón Compartir (el cuadrado con la flecha).</li><li>Elegí «Agregar a inicio».</li></ol></div>
+    <div class="stack"><b>Android (Chrome)</b><ol style="margin:0;padding-left:18px"><li>Tocá los tres puntitos de arriba a la derecha.</li><li>Elegí «Agregar a pantalla principal» o «Instalar app».</li></ol></div>
+    <p class="muted small">Lo nuevo desde tu última visita aparece con un número rojo en cada pestaña.</p>
     <div><button class="btn" data-act="close">Listo</button></div>`);
 }
 function photoModal(id){
-  const p=ITEMS.find(i=>i.id===id); if(!p) return;
-  $("#overlay").innerHTML=`<div class="lb" data-act="close-bg"><figure><img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto")}"><figcaption><span>${esc(p.data.caption||"")} <span style="opacity:.7">· ${esc(p.author)} · ${ago(p.created_at)}</span></span><span class="row"><a class="link" href="${esc(p.data.url)}" target="_blank" rel="noopener">Abrir original</a>${ME&&p.author===ME.name?`<button class="link danger" data-act="del" data-id="${p.id}">Borrar</button>`:""}<button class="link" data-act="close">Cerrar</button></span></figcaption></figure></div>`;
+  const p=ITEMS.find(i=>i.id===id); if(!p) return; const ls=likes(id); const yo=ME&&ls.find(l=>l.author===ME.name);
+  const isV=p.data.type==="video"; const dl=ONLINE?p.data.url+"?download=pibex2026-"+id.slice(0,6)+(isV?".mp4":".jpg"):p.data.url;
+  $("#overlay").innerHTML=`<div class="lb" data-act="close-bg"><figure>${isV?`<video src="${esc(p.data.url)}" controls playsinline autoplay></video>`:`<img src="${esc(p.data.url)}" alt="${esc(p.data.caption||"Foto")}">`}
+    <figcaption><span>${esc(p.data.caption||"")} <span style="opacity:.7">· ${esc(p.author)} · ${ago(p.created_at)}</span></span>
+    <span class="acts"><button class="btn sm" data-act="like" data-id="${id}">${yo?"❤️":"🤍"} ${ls.length||""}</button><button class="btn sm" data-act="share" data-id="${id}">Compartir</button><a class="btn ghost sm" href="${esc(dl)}" target="_blank" rel="noopener">Descargar</a>${canDel(p)?`<button class="link danger" data-act="del" data-id="${id}">Borrar</button>`:""}<button class="btn ghost sm" data-act="close">Cerrar</button></span></figcaption>
+    ${ls.length?`<span class="small" style="opacity:.75">Les gusta a ${esc(ls.map(l=>l.author).join(", "))}</span>`:""}</figure></div>`;
+}
+async function sharePhoto(p){
+  const isV=p.data.type==="video";
+  try{
+    if(navigator.canShare){ const r=await fetch(p.data.url); const b=await r.blob(); const file=new File([b],"pibex2026"+(isV?".mp4":".jpg"),{type:b.type||(isV?"video/mp4":"image/jpeg")});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:"PIBEX 2026 · Bariloche 🏔️"}); return; } }
+  }catch(e){ if(e&&e.name==="AbortError") return; }
+  window.open("https://wa.me/?text="+encodeURIComponent("PIBEX 2026 🏔️ "+(ONLINE?p.data.url:location.href)),"_blank");
+}
+
+/* ---- Sorteo animado ---- */
+async function playReveal(){
+  const cfg=roomsCfg(); if(!cfg.drawnAt) return; REVEAL=true;
+  if(TAB!=="cuartos"){TAB="cuartos";render();}
+  const els=[...document.querySelectorAll("#rooms .name")]; els.forEach(e=>e.classList.add("hid"));
+  for(const e of shuffle(els)){ await new Promise(r=>setTimeout(r,matchMedia("(prefers-reduced-motion: reduce)").matches?40:350)); e.classList.remove("hid"); }
+  REVEAL=null;
 }
 
 /* ================= Imagen ================= */
-function resize(file,max){return new Promise((ok,ko)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):ko(new Error("No se pudo procesar")),"image/jpeg",ONLINE?.82:.6);URL.revokeObjectURL(img.src)};img.onerror=()=>ko(new Error("Formato no soportado"));img.src=URL.createObjectURL(file)})}
+function resize(file,max){return new Promise((ok,ko)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):ko(new Error("No se pudo procesar")),"image/jpeg",ONLINE?.85:.6);URL.revokeObjectURL(img.src)};img.onerror=()=>ko(new Error("Formato no soportado"));img.src=URL.createObjectURL(file)})}
 
 /* ================= Eventos ================= */
 function needMe(){ if(!ME){ loginModal(); return false;} return true; }
 document.addEventListener("click", async ev=>{
   const tabBtn=ev.target.closest("[data-tab]");
-  if(tabBtn){ TAB=tabBtn.dataset.tab; try{history.replaceState(null,"","#"+TAB)}catch(e){} render(); window.scrollTo({top:0}); tabBtn.closest(".tabs") || document.querySelector(`.tab[data-tab="${TAB}"]`)?.scrollIntoView({inline:"center",block:"nearest"}); return; }
-  const pk=ev.target.closest("[data-pick]"); if(pk){ pickName=pk.dataset.pick; document.querySelectorAll("[data-pick]").forEach(b=>b.setAttribute("aria-pressed",b===pk)); return; }
+  if(tabBtn){ TAB=tabBtn.dataset.tab; try{history.replaceState(null,"","#"+TAB)}catch(e){} render(); window.scrollTo({top:0}); return; }
+  const pk=ev.target.closest("[data-pick]"); if(pk){ pickName=pk.dataset.pick; pickEmoji=null; paintLogin(); setTimeout(()=>$("#lg-pin")?.focus(),30); return; }
   const em=ev.target.closest("[data-emoji]"); if(em){ pickEmoji=em.dataset.emoji; document.querySelectorAll("[data-emoji]").forEach(b=>b.setAttribute("aria-pressed",b===em)); return; }
   const a=ev.target.closest("[data-act]"); if(!a) return;
   const act=a.dataset.act, id=a.dataset.id;
   if(act==="close-bg"){ if(ev.target===a) closeModal(); return; }
   try{
   switch(act){
+    case "tl": $("#tabs").scrollBy({left:-220,behavior:"smooth"}); break;
+    case "tr": $("#tabs").scrollBy({left:220,behavior:"smooth"}); break;
     case "login": loginModal(); break;
+    case "logout": ME=null; lsSet("pibex_me2",null); closeModal(); render(); loginModal(); break;
     case "notif": notifModal(); break;
     case "close": closeModal(); break;
     case "refresh": render(); break;
     case "login-ok": {
-      const k=$("#lg-k"); if(k && k.value.trim().toLowerCase()!==CONFIG.CLAVE_GRUPO.toLowerCase()){ $("#lg-err").textContent="La palabra clave no es esa. Preguntale a la Comisión."; return; }
-      if(k) lsSet("pibex_ok",true);
-      if(!pickName){ $("#lg-err").textContent="Elegí tu nombre de la lista."; return; }
-      const changed = !ME || ME.emoji!==pickEmoji || ME.name!==pickName;
-      ME={name:pickName,emoji:pickEmoji}; lsSet("pibex_me",ME); closeModal();
-      if(changed){ const prev=of("perfil").filter(i=>i.author===ME.name).pop(); if(!prev||prev.data.emoji!==pickEmoji) await Store.add("perfil",{emoji:pickEmoji}); }
-      render(); toast("Bienvenido, "+ME.name); break; }
+      const err=$("#lg-err"); const pin=($("#lg-pin")?.value||"").trim();
+      if(!/^\d{4}$/.test(pin)){ err.textContent="El PIN tiene que ser de 4 números."; return; }
+      a.disabled=true;
+      if(PERFILES[pickName]){
+        const r=await Auth.login(pickName,pin,pickEmoji);
+        if(r==="bad"){ err.textContent="PIN incorrecto."; a.disabled=false; return; }
+        if(r==="emoji"){ err.textContent="Ese escudo lo acaba de agarrar otro. Elegí otro."; await Auth.list(); a.disabled=false; return; }
+        if(r!=="ok"){ err.textContent="No se pudo entrar ("+r+")."; a.disabled=false; return; }
+      } else {
+        if(pin!==($("#lg-pin2")?.value||"").trim()){ err.textContent="Los dos PIN no coinciden."; a.disabled=false; return; }
+        if(!pickEmoji){ err.textContent="Elegí tu escudo."; a.disabled=false; return; }
+        const r=await Auth.claim(pickName,pin,pickEmoji);
+        if(r==="taken"){ err.textContent="Alguien reclamó ese nombre recién. Si no fuiste vos, avisale a la organización."; await Auth.list(); paintLogin(); return; }
+        if(r==="emoji"){ err.textContent="Ese escudo ya lo tiene otro."; await Auth.list(); a.disabled=false; return; }
+      }
+      await Auth.list(); ME={name:pickName}; lsSet("pibex_me2",ME); closeModal(); render(); toast("Adentro, "+ME.name); break; }
     case "open": OPEN.add(id); render(); break;
     case "toggle": OPEN.has("ev"+id)?OPEN.delete("ev"+id):OPEN.add("ev"+id); render(); break;
     case "del": if(ARM!==id){ ARM=id; a.textContent="¿seguro? tocá de nuevo"; return; } ARM=null; await Store.remove(id); closeModal(); render(); toast("Borrado"); break;
     case "arm": ARM=id; render(); break;
     case "join": { if(!needMe())return; const yo=refs("join",id).find(j=>j.author===ME.name); if(yo) await Store.remove(yo.id); else await Store.add("join",{ref:id}); render(); break; }
-    case "check": { if(!needMe()){a.checked=!a.checked;return;} const it=ITEMS.find(i=>i.id===id); await Store.update(id,{done:a.checked,by:ME.name}); render(); break; }
-    case "postular": if(!needMe())return; await Store.add("postulacion",{ref:id}); render(); toast("Candidatura presentada"); break;
-    case "reveal": ARM=null; await Store.add("award_reveal",{}); notify("🏆 Choice Awards","¡La Comisión reveló los resultados!"); render(); break;
-    case "unreveal": for(const r of of("award_reveal")) await Store.remove(r.id); render(); break;
+    case "ev-ok": { const it=ITEMS.find(i=>i.id===id); await Store.update(id,{status:"ok",by:ME.name}); notify("✅ Plan aprobado: "+it.data.title, dayLabel(it.data.day)+(it.data.time?" "+it.data.time:"")); render(); break; }
+    case "ev-no": await Store.update(id,{status:"rechazado",by:ME.name}); render(); break;
+    case "postular": if(!needMe())return; await Store.add("postulacion",{ref:id,status:"pendiente"}); render(); toast("Candidatura presentada. La organización decide."); break;
+    case "post-ok": { const it=ITEMS.find(i=>i.id===id); await Store.update(id,{status:"ok",by:ME.name}); const v=VACANTES.find(x=>x.id===it.data.ref); notify("🎖️ Nueva designación",it.author+" asume en "+(v?v.name:"un cargo")); render(); break; }
+    case "catadd": { const inp=$("#cat-new"); const t=inp.value.trim(); if(!t) return; const cfg=awardsCfg(); await saveAwards({cats:[...cfg.cats,{id:"c"+uid(),title:t}],phase:cfg.phase}); render(); break; }
+    case "catdel": { const cfg=awardsCfg(); await saveAwards({cats:cfg.cats.filter(c=>c.id!==id),phase:cfg.phase}); render(); break; }
+    case "catsave": { const cfg=awardsCfg(); const cats=cfg.cats.map(c=>{const i=document.querySelector(`[data-cat="${c.id}"]`);return {...c,title:(i&&i.value.trim())||c.title}}); await saveAwards({cats,phase:cfg.phase}); toast("Categorías guardadas"); render(); break; }
+    case "aw-open": { ARM=null; const cfg=awardsCfg(); const cats=cfg.cats.map(c=>{const i=document.querySelector(`[data-cat="${c.id}"]`);return {...c,title:(i&&i.value.trim())||c.title}}); await saveAwards({cats,phase:"voting"}); notify("🏆 Choice Awards","¡Se habilitó la votación! Entrá a votar."); render(); break; }
+    case "aw-reveal": ARM=null; await saveAwards({phase:"revealed"}); notify("🏆 Choice Awards","¡La organización reveló los ganadores!"); render(); break;
+    case "aw-hide": await saveAwards({phase:"hidden"}); render(); break;
+    case "aw-reopen": await saveAwards({phase:"voting"}); render(); break;
+    case "roomdel": { const cfg=roomsCfg(); await saveRooms({rooms:cfg.rooms.filter(r=>r.id!==id)}); render(); break; }
+    case "rm-draw": { ARM=null; const cfg=roomsCfg(); const slots=[]; cfg.rooms.forEach(r=>{for(let i=0;i<r.cap;i++)slots.push(r.id)}); const ppl=shuffle(PEOPLE); const assign={}; ppl.forEach((p,i)=>{if(slots[i])assign[p]=slots[i]});
+      // mezclar slots para que no se llenen siempre los primeros cuartos cuando sobran camas
+      const mixed=shuffle(slots).slice(0,ppl.length); ppl.forEach((p,i)=>{assign[p]=mixed[i]||undefined; if(!assign[p]) delete assign[p];});
+      await saveRooms({assign,drawnAt:new Date().toISOString(),drawnBy:ME.name}); notify("🛏️ ¡Se sortearon los cuartos!","Entrá a ver con quién dormís."); render(); playReveal(); break; }
+    case "replay": playReveal(); break;
     case "photo": photoModal(id); break;
+    case "psort": PHOTO_SORT=id; render(); break;
+    case "like": { if(!needMe())return; const yo=likes(id).find(l=>l.author===ME.name); if(yo) await Store.remove(yo.id); else await Store.add("like",{ref:id}); photoModal(id); break; }
+    case "share": { const p=ITEMS.find(i=>i.id===id); if(p) await sharePhoto(p); break; }
     case "copy": { const t=a.dataset.text; try{ await navigator.clipboard.writeText(t); toast("Copiado: "+t);}catch(e){ const c=a.previousElementSibling; if(c){const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r);} toast("Seleccionado, copialo a mano"); } break; }
-  }}catch(e){ console.error(e); toast("No se pudo guardar. Revisá la conexión."); }
+  }}catch(e){ console.error(e); toast("No se pudo guardar. Revisá la conexión."); a.disabled=false; }
 });
 document.addEventListener("change", async ev=>{
-  const s=ev.target.closest("[data-vote]"); if(!s) return;
-  if(!needMe()) return;
+  const s=ev.target.closest("[data-vote]"); if(!s) return; if(!needMe()) return;
   try{ const prev=myVote(s.dataset.vote); if(prev) await Store.remove(prev.id); if(s.value) await Store.add("vote",{cat:s.dataset.vote,nominee:s.value}); toast(s.value?"Voto registrado":"Voto retirado"); render(); }catch(e){ toast("No se pudo votar"); }
 });
 document.addEventListener("submit", async ev=>{
-  const f=ev.target.closest("[data-form]"); if(!f) return; ev.preventDefault();
-  if(!needMe()) return;
+  const f=ev.target.closest("[data-form]"); if(!f) return; ev.preventDefault(); if(!needMe()) return;
   const d=Object.fromEntries(new FormData(f)); const kind=f.dataset.form; const btn=f.querySelector("button"); if(btn) btn.disabled=true;
+  const org=isOrg(ME.name);
   try{
     switch(kind){
       case "comment": { const ref=f.dataset.ref; await Store.add("comment",{ref,text:d.text.trim()}); OPEN.add(ref); notify("💬 "+ME.name+" comentó",d.text); break; }
       case "post": await Store.add("post",{text:d.text.trim()}); notify("📢 "+ME.name+" en el Muro",d.text); break;
-      case "comunicado": { const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
-      case "event": await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim()}); notify("🗓️ Nuevo plan: "+d.title,(DAYS.find(x=>x[0]===d.day)||["",""])[1]+(d.time?" "+d.time:"")+" · propone "+ME.name); break;
+      case "comunicado": { if(!org) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
+      case "event": { const st=org?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:org?ME.name:undefined});
+        notify(org?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(org?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
       case "truco": {
         const p1=[d.a1,d.a2], p2=[d.b1,d.b2]; const all=[...p1,...p2];
-        if(all.some(x=>!x) || new Set(all).size<4){ toast("Elegí 4 jugadores distintos"); break; }
+        if(all.some(x=>!x)||new Set(all).size<4){ toast("Elegí 4 jugadores distintos"); break; }
         const s1=+d.s1, s2=+d.s2; if(s1===s2){ toast("En el truco no hay empate"); break; }
         await Store.add("truco",{p1,p2,s1,s2}); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
-      case "award_cat": await Store.add("award_cat",{title:d.title.trim()}); break;
       case "vuelo": { const fx={iv:d.iv||null,is:d.is||null,il:d.il||null,vv:d.vv||null,vs:d.vs||null,vl:d.vl||null}; await Store.add("vuelo",{person:ME.name,f:fx}); toast("Vuelo actualizado"); break; }
       case "pago": if(!isIn("economica",ME.name)) break; await Store.add("pago",{person:d.person,concept:d.concept,amount:+d.amount}); toast("Pago registrado"); break;
       case "place": await Store.add("place",{name:d.name.trim(),note:d.note.trim()}); break;
-      case "compra": await Store.add("compra",{text:d.text.trim(),done:false}); break;
       case "sorpresa": await Store.add("sorpresa",{text:d.text.trim(),day:d.day}); toast("Enviado a la Comisión"); break;
+      case "room": { if(!org) break; const cfg=roomsCfg(); await saveRooms({rooms:[...cfg.rooms,{id:"r"+uid(),name:d.name.trim(),cap:Math.max(1,+d.cap)}]}); break; }
+      case "swap": { if(!org) break; if(!d.a||!d.b||d.a===d.b){ toast("Elegí dos personas distintas"); break; } const cfg=roomsCfg(); const as={...cfg.assign}; const t=as[d.a]; if(as[d.b]) as[d.a]=as[d.b]; else delete as[d.a]; if(t) as[d.b]=t; else delete as[d.b]; await saveRooms({assign:as}); toast("Intercambiados"); break; }
       case "photo": {
-        const files=[...f.querySelector("input[type=file]").files]; const st=$("#ph-status"); let ok=0;
-        for(const file of files){ st.textContent=`Subiendo ${ok+1} de ${files.length}…`; const blob=await resize(file,ONLINE?1600:700); const url=await Store.upload(blob); await Store.add("photo",{url,caption:d.caption.trim()}); ok++; }
-        if(ok) notify("📸 "+ME.name+" subió "+ok+(ok===1?" foto":" fotos"),d.caption||"Entrá a verlas"); break; }
+        const files=[...f.querySelector("input[type=file]").files]; const st=$("#ph-status"); let ok=0, skip=0;
+        for(const file of files){
+          st.textContent=`Subiendo ${ok+skip+1} de ${files.length}…`;
+          const isV=file.type.startsWith("video/");
+          if(isV){ if(!ONLINE||file.size>50*1024*1024){ skip++; continue; } const ext=(file.name.split(".").pop()||"mp4").toLowerCase(); const url=await Store.upload(file,ext,file.type); await Store.add("photo",{url,caption:d.caption.trim(),type:"video"}); }
+          else { const blob=await resize(file,ONLINE?2048:700); const url=await Store.upload(blob,"jpg","image/jpeg"); await Store.add("photo",{url,caption:d.caption.trim(),type:"image"}); }
+          ok++;
+        }
+        if(skip) toast(`${skip} video${skip>1?"s":""} no se subieron (más de 50 MB${ONLINE?"":" o modo demo"}).`);
+        if(ok) notify("📸 "+ME.name+" subió "+ok+(ok===1?" archivo":" archivos"),d.caption||"Entrá a verlos"); break; }
     }
     render();
   }catch(e){ console.error(e); toast("No se pudo guardar. Revisá la conexión."); if(btn) btn.disabled=false; }
@@ -887,11 +1191,15 @@ window.addEventListener("hashchange",()=>{const t=location.hash.slice(1); if(TAB
 
 /* ================= Arranque ================= */
 (async()=>{
+  $("#tabs").addEventListener("scroll",updateArrows,{passive:true}); window.addEventListener("resize",updateArrows);
   render();
+  lsSet("pibex_seen", Date.now());
   try{ await Store.init(); }catch(e){ console.error(e); toast("No se pudo conectar con la base de datos"); }
+  if(ME && !PERFILES[ME.name] && !AUTH_ERR){ ME=null; }
   render();
-  if(!ME || (CONFIG.CLAVE_GRUPO && !lsGet("pibex_ok"))) loginModal();
+  if(!ME && !AUTH_ERR) loginModal();
 })();
+
 </script>
 
 </body>
