@@ -436,6 +436,8 @@ button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
 .caja .palo{stroke:#C9A06A;stroke-width:4;stroke-linecap:round}
 .caja .cabeza{fill:#B8402F}
 .btn.sumar{font-size:1.4rem;padding:12px 26px}
+.gate{justify-items:center;text-align:center;padding-block:32px}
+.gate img{width:120px;height:120px;border-radius:50%}
 
 </style>
 
@@ -723,6 +725,8 @@ function render(){
   $("#mebtn").innerHTML = ME? `${esc(emojiOf(ME.name))} ${esc(ME.name)}` : "Entrar";
   const demo = ONLINE?"":`<div class="banner"><b>Vista previa en modo demo.</b> Lo que cargues queda solo en este navegador. En la web real todo se comparte entre todos.</div>`;
   const autherr = AUTH_ERR?`<div class="banner"><b>Falta un paso en Supabase:</b> correr el SQL de usuarios (v2). Sin eso nadie puede entrar.</div>`:"";
+  if(!ME){ $("#main").innerHTML = demo + autherr + `<section class="sheet official gate"><img src="logo.png" alt="Escudo PIBEX 2026" width="120" height="120"><h2>Acceso restringido</h2><p class="muted">Esta web es solo para los integrantes del PIBEX 2026. Elegí tu nombre y entrá con tu PIN.</p><div><button class="btn" data-act="login">Entrar</button></div></section>`;
+    $("#tabs").innerHTML=""; $("#morepanel").hidden=true; PENDING=false; return; }
   $("#main").innerHTML = demo + autherr + (VIEWS[TAB]||VIEWS.inicio)();
   PENDING=false; document.querySelector(".newpill")?.remove();
   if(TAB==="inicio") loadWeather();
@@ -809,9 +813,13 @@ function allEvents(){
 
 /* ---- Truco ---- */
 const tmode = m => (m.data.mode||4);
+const tOk = m => m.data.ok!==false;
+const tLosers = d => d.s1>d.s2 ? d.p2 : d.p1;
+const tCanConfirm = m => ME && !tOk(m) && (tLosers(m.data).includes(ME.name) || SUPER.includes(ME.name));
+const autoOk = d => tLosers(d).includes(ME.name) || SUPER.includes(ME.name);
 const teamName = t => t.join(" & ");
 function trucoStats(mode){
-  const ind={}, par={}; const ms=of("truco").filter(m=>!mode||tmode(m)===mode);
+  const ind={}, par={}; const ms=of("truco").filter(m=>tOk(m)&&(!mode||tmode(m)===mode));
   const bump=(o,k,won,pf,pc)=>{o[k]=o[k]||{k,pj:0,pg:0,pp:0,pf:0,pc:0,seq:[]};const r=o[k];r.pj++;won?r.pg++:r.pp++;r.pf+=pf;r.pc+=pc;r.seq.push(won)};
   ms.forEach(m=>{const d=m.data;const w1=d.s1>d.s2;
     bump(par,[...d.p1].sort().join(" & "),w1,d.s1,d.s2); bump(par,[...d.p2].sort().join(" & "),!w1,d.s2,d.s1);
@@ -822,7 +830,7 @@ function trucoStats(mode){
   return {ind:sort(ind),par:sort(par),ms};
 }
 /* Torneos: liga (todos contra todos, gana el que más partidos gana) o mata-mata */
-function tResult(tid,mid){ return of("truco").find(m=>m.data.tid===tid&&m.data.mid===mid); }
+function tResult(tid,mid,any){ return of("truco").find(m=>m.data.tid===tid&&m.data.mid===mid&&(any||tOk(m))); }
 function ligaTable(t){
   const rows=t.teams.map((tm,i)=>({i,k:teamName(tm),pj:0,pg:0,pp:0,pf:0,pc:0}));
   const fixtures=[]; for(let a=0;a<t.teams.length;a++) for(let b=a+1;b<t.teams.length;b++){ const mid=`l${a}-${b}`; const r=tResult(t.id,mid); fixtures.push({mid,a,b,r});
@@ -948,7 +956,8 @@ inicio(){
   const feed=(nuevos.length?nuevos:ITEMS.filter(i=>feedKinds[i.kind])).slice(-10).reverse();
   const tile=(tab,lbl,big,sub)=>`<button class="tile" data-tab="${tab}"><span class="lbl">${lbl}</span><span class="big">${big}</span>${sub?`<span class="sub">${sub}</span>`:""}</button>`;
   const pinReqs=ME&&SUPER.includes(ME.name)?of("pin_reset").filter(r=>!r.data.done):[];
-  return `${pinReqs.length?`<button class="banner" data-tab="comisiones" style="text-align:left;cursor:pointer">🔑 <b>${pinReqs.length} ${pinReqs.length===1?"pedido":"pedidos"} de blanqueo de PIN</b> (${esc(pinReqs.map(r=>r.author).join(", "))}). Tocá para resolver.</button>`:""}
+  const toConfirm=of("truco").filter(m=>!tOk(m)&&ME&&tLosers(m.data).includes(ME.name));
+  return `${toConfirm.length?`<button class="banner" data-tab="truco" style="text-align:left;cursor:pointer">🃏 <b>Tenés ${toConfirm.length} ${toConfirm.length===1?"partido":"partidos"} de truco para confirmar.</b> Si perdiste, confirmalo; si no existió, tocá «No fue así».</button>`:""}${pinReqs.length?`<button class="banner" data-tab="comisiones" style="text-align:left;cursor:pointer">🔑 <b>${pinReqs.length} ${pinReqs.length===1?"pedido":"pedidos"} de blanqueo de PIN</b> (${esc(pinReqs.map(r=>r.author).join(", "))}). Tocá para resolver.</button>`:""}
   <section class="sheet official">
     <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
     <div class="count" id="countdown">${countdownHTML()}</div>
@@ -1042,11 +1051,16 @@ truco(){
   <div class="seg big2"><button data-act="tsub" data-id="partidos" aria-pressed="${TRUCO_SUB==="partidos"}">Partidos y rankings</button><button data-act="tsub" data-id="anotador" aria-pressed="${TRUCO_SUB==="anotador"}">Anotador</button><button data-act="tsub" data-id="torneos" aria-pressed="${TRUCO_SUB==="torneos"}">Torneos</button></div>`;
   const champs=torneos().map(t=>({t,c:champOf(t)})).filter(x=>x.c);
   const fame=champs.length?`<section class="sheet official"><span class="eyebrow">Salón de la fama</span>${champs.slice().reverse().map(({t,c})=>`<div class="row between"><span>🏆 <b>${esc(teamName(c))}</b></span><span class="muted small">${esc(t.name)} · de a ${t.mode}</span></div>`).join("")}</section>`:"";
-  if(TRUCO_SUB==="torneos") return head+fame+torneosView();
-  if(TRUCO_SUB==="anotador") return head+anotadorView();
+  const pend=of("truco").filter(m=>!tOk(m));
+  const pendBox=pend.length?`<section class="org"><span class="eyebrow">Partidos a confirmar · ${pend.length}</span><p class="small">Cuentan cuando confirma alguien del equipo que perdió.</p>
+    ${pend.map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="stack" style="gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px"><span><b>${esc(teamName(w?d.p1:d.p2))}</b> le ganó <span class="mono">${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)}</span> a <b>${esc(teamName(w?d.p2:d.p1))}</b></span>
+      <span class="small muted">Cargó ${esc(m.author)} · ${ago(m.created_at)}</span>
+      ${tCanConfirm(m)?`<div class="row"><button class="btn sm" data-act="tconf" data-id="${m.id}">✓ Confirmar</button><button class="btn ghost sm" data-act="trej" data-id="${m.id}">✗ No fue así</button></div>`:`<span class="small">Esperando que confirme ${esc(tLosers(d).join(" o "))}.</span>`}</div>`}).join("")}</section>`:"";
+  if(TRUCO_SUB==="torneos") return head+pendBox+fame+torneosView();
+  if(TRUCO_SUB==="anotador") return head+pendBox+anotadorView();
   const sz=TRUCO_MODE/2, lbl=TRUCO_MODE===4?"Pareja":"Equipo";
   const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts()}</select>`).join("");
-  return head+`
+  return head+pendBox+`
   <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido suelto</span>
     <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4 · 2 parejas</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6 · 3 contra 3</button></div></div>
     <div class="grid2">
@@ -1055,7 +1069,7 @@ truco(){
     </div><p class="small muted">Un jugador no puede estar en los dos lados.</p><div><button class="btn">Cargar resultado</button></div></form>
   ${fame}
   ${[4,6].map(rankBlock).join("")}
-  ${(()=>{const ms=of("truco");return ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;const t=d.tid&&torneos().find(x=>x.id===d.tid);return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(teamName(d.p1))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(teamName(d.p2))}</b> <span class="pill info">de a ${tmode(m)}</span>${t?` <span class="pill warn">${esc(t.name)}</span>`:""}</span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""})()}`;
+  ${(()=>{const ms=of("truco");return ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;const t=d.tid&&torneos().find(x=>x.id===d.tid);return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(teamName(d.p1))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(teamName(d.p2))}</b> <span class="pill info">de a ${tmode(m)}</span>${t?` <span class="pill warn">${esc(t.name)}</span>`:""}${tOk(m)?"":` <span class="pill bad">a confirmar</span>`}</span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""})()}`;
 },
 
 awards(){
@@ -1219,14 +1233,14 @@ function paintLogin(){
   if(pickName&&claimed) step=`
       <div class="field"><label for="lg-pin">PIN de ${esc(pickName)}</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
       <div class="row"><button class="btn" data-act="login-ok">Entrar</button><button class="link" data-act="forgot">¿Olvidaste tu PIN?</button></div>`;
-  else if(pickName&&!pickSure) step=`
+  else if(false) step=`
       <div class="org"><b>¿Seguro que sos ${esc(pickName)}?</b><span class="small">Una vez que lo reclamás queda atado a vos: nadie más puede usarlo y vos no te podés cambiar a otro nombre.</span>
       <div class="row"><button class="btn sm" data-act="sure-yes">Sí, soy ${esc(pickName.split(" ")[0])}</button><button class="btn ghost sm" data-act="sure-no">No, me equivoqué</button></div></div>`;
   else if(pickName) step=`<span class="eyebrow">Elegí tu escudo (es único)</span>${emojiChips}
       <div class="fgrid"><div class="field"><label for="lg-pin">Inventá un PIN de 4 números</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin" autocomplete="off"></div>
       <div class="field"><label for="lg-pin2">Repetilo</label><input class="pin" type="password" inputmode="numeric" maxlength="4" id="lg-pin2" autocomplete="off"></div></div>
       <div><button class="btn" data-act="login-ok">Reclamar mi nombre</button></div>`;
-  modal(`${head}<p class="muted small">Cada nombre se reclama una sola vez con un PIN. 🔒 = ya reclamado.</p>
+  modal(`${head}<p class="muted small">Elegí tu nombre. La primera vez inventás un PIN de 4 números y el nombre queda tuyo: nadie más lo puede usar. 🔒 = ya reclamado.</p>
     ${[["Se alojan en la mansión",CASA],["Viven en Bariloche",LOCALES]].map(([t,list])=>`<span class="eyebrow">${t}</span><div class="chips">${list.map(p=>`<button type="button" class="chipbtn" data-pick="${esc(p)}" aria-pressed="${p===pickName}">${PERFILES[p]?esc(PERFILES[p])+" ":""}${esc(p)}${PERFILES[p]?'<span class="lock">🔒</span>':""}</button>`).join("")}</div>`).join("")}
     ${step}${SWITCHING?`<div><button class="btn ghost sm" data-act="close">Cancelar</button></div>`:""}
     <p class="small" id="lg-err" style="color:var(--stamp)"></p>`);
@@ -1281,7 +1295,7 @@ document.addEventListener("click", async ev=>{
   const em=ev.target.closest("[data-emoji]"); if(em){ pickEmoji=em.dataset.emoji; document.querySelectorAll("[data-emoji]").forEach(b=>b.setAttribute("aria-pressed",b===em)); return; }
   const a=ev.target.closest("[data-act]"); if(!a) return;
   const act=a.dataset.act, id=a.dataset.id;
-  if(act==="close-bg"){ if(ev.target===a) closeModal(); return; }
+  if(act==="close-bg"){ if(ev.target===a&&ME) closeModal(); return; }
   try{
   switch(act){
     case "tl": $("#tabs").scrollBy({left:-220,behavior:"smooth"}); break;
@@ -1351,10 +1365,14 @@ document.addEventListener("click", async ev=>{
     case "com-rm": { if(!SUPER.includes(ME.name)) break; const [k,n]=id.split("|"); const cfg=comCfg(); await saveCom({[k]:(cfg[k]||[]).filter(x=>x!==n)}); render(); break; }
     case "more": MORE_OPEN=!MORE_OPEN; renderTabs(); break;
     case "tsub": TRUCO_SUB=id; render(); break;
+    case "tconf": { const m=ITEMS.find(i=>i.id===id); if(!m||!tCanConfirm(m)) break; const t=m.data.tid&&torneos().find(x=>x.id===m.data.tid); const before=t&&champOf(t);
+      await Store.update(id,{ok:true,conf_by:ME.name}); toast("Resultado confirmado");
+      if(t){ const after=champOf(torneos().find(x=>x.id===t.id)); if(!before&&after) notify("🏆 Campeón del torneo "+t.name,teamName(after)); } render(); break; }
+    case "trej": { const m=ITEMS.find(i=>i.id===id); if(!m||!tCanConfirm(m)) break; if(ARM!=="rej"+id){ ARM="rej"+id; a.textContent="¿Seguro? Se borra"; return; } ARM=null; await Store.remove(id); toast("Partido borrado"); render(); break; }
     case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); } break;
     case "anot-sub": if(ANOT&&ANOT.s[+id]>0){ ANOT.s[+id]--; saveAnot(); render(); } break;
     case "anot-reset": ARM=null; ANOT=null; saveAnot(); render(); break;
-    case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; await Store.add("truco",{mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
+    case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; const dd={mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Guardado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
     case "tmode": TRUCO_MODE=+id; render(); break;
     case "tf": { const nm=$("#tf-name"); if(nm) TF.name=nm.value; const [k,v]=id.split(":"); TF[k]=k==="format"?v:+v; render(); break; }
     case "replay": playReveal(id); break;
@@ -1391,6 +1409,8 @@ function rankBlock(mode){
 }
 function matchRow(t,mid,a,b,res){
   const A=t.teams[a], B=t.teams[b]; const canEdit=ME&&(t.item.author===ME.name||SUPER.includes(ME.name)||[...A,...B].includes(ME.name));
+  const pend=!res&&tResult(t.id,mid,true);
+  if(pend){ const d=pend.data; return `<div class="match"><span>${esc(teamName(A))}</span><span class="mono">${d.s1}–${d.s2}</span><span>${esc(teamName(B))}</span><span class="pill warn">a confirmar</span></div>`; }
   if(res){ const w=res.data.s1>res.data.s2; return `<div class="match"><span class="${w?"win":""}">${esc(teamName(A))}</span><span class="mono">${res.data.s1}–${res.data.s2}</span><span class="${w?"":"win"}">${esc(teamName(B))}</span>${ME&&(t.item.author===ME.name||SUPER.includes(ME.name))?`<button class="link danger" data-act="del" data-id="${res.id}">borrar</button>`:""}</div>`; }
   return `<form class="match" data-form="tmatch" data-tid="${t.id}" data-mid="${mid}" data-a="${a}" data-b="${b}"><span>${esc(teamName(A))}</span>${canEdit?`<span class="sc"><input type="number" name="s1" min="0" max="40" required aria-label="Puntos ${esc(teamName(A))}">–<input type="number" name="s2" min="0" max="40" required aria-label="Puntos ${esc(teamName(B))}"></span>`:`<span class="muted small">vs</span>`}<span>${esc(teamName(B))}</span>${canEdit?`<button class="btn sm">OK</button>`:""}</form>`;
 }
@@ -1441,7 +1461,7 @@ document.addEventListener("submit", async ev=>{
         const p1=[...Array(sz)].map((_,j)=>d["a"+(j+1)]), p2=[...Array(sz)].map((_,j)=>d["b"+(j+1)]); const all=[...p1,...p2];
         if(all.some(x=>!x)||new Set(all).size<TRUCO_MODE){ toast(`Elegí ${TRUCO_MODE} jugadores distintos`); break; }
         const s1=+d.s1, s2=+d.s2; if(s1===s2){ toast("En el truco no hay empate"); break; }
-        await Store.add("truco",{mode:TRUCO_MODE,p1,p2,s1,s2}); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
+        const dd={mode:TRUCO_MODE,p1,p2,s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Cargado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
       case "anot-start": { const sz=TRUCO_MODE/2; const p=["a","b"].map(x=>[...Array(sz)].map((_,j)=>d[x+(j+1)]||""));
         const all=p.flat().filter(Boolean); if(new Set(all).size<all.length){ toast("Hay un jugador repetido"); break; }
         ANOT={mode:TRUCO_MODE,p,s:[0,0]}; saveAnot(); break; }
@@ -1450,8 +1470,8 @@ document.addEventListener("submit", async ev=>{
         const name=(d.name||"").trim()||"Torneo"; await Store.add("torneo",{name,mode:TF.mode,format:TF.format,teams,order:shuffle([...teams.keys()])});
         notify("🃏 Nuevo torneo de truco: "+name,(TF.format==="liga"?"Liga":"Mata-mata")+" de a "+TF.mode+" · "+TF.n+(TF.mode===4?" parejas":" equipos")); TF={...TF,name:""}; toast("Torneo creado"); break; }
       case "tmatch": { const t=torneos().find(x=>x.id===f.dataset.tid); if(!t) break; const a=+f.dataset.a, b=+f.dataset.b; const s1=+d.s1, s2=+d.s2; if(s1===s2){ toast("En el truco no hay empate"); break; }
-        if(tResult(t.id,f.dataset.mid)) break; const before=champOf(t);
-        await Store.add("truco",{mode:t.mode,p1:t.teams[a],p2:t.teams[b],s1,s2,tid:t.id,mid:f.dataset.mid});
+        if(tResult(t.id,f.dataset.mid,true)) break; const before=champOf(t);
+        const dd={mode:t.mode,p1:t.teams[a],p2:t.teams[b],s1,s2,tid:t.id,mid:f.dataset.mid}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Cargado. Cuenta cuando lo confirme alguien que perdió.");
         const after=champOf(torneos().find(x=>x.id===t.id)); if(!before&&after){ notify("🏆 Campeón del torneo "+t.name,teamName(after)); toast("¡Tenemos campeón!"); } break; }
       case "vuelo": { const fx={iv:d.iv||null,is:d.is||null,il:d.il||null,vv:d.vv||null,vs:d.vs||null,vl:d.vl||null}; await Store.add("vuelo",{person:ME.name,f:fx}); toast("Vuelo actualizado"); break; }
       case "pago": if(!isIn("economica",ME.name)) break; await Store.add("pago",{person:d.person,concept:d.concept,amount:+d.amount}); toast("Pago registrado"); break;
