@@ -635,6 +635,9 @@ const Store = {
   }
 };
 const of = k => ITEMS.filter(i=>i.kind===k);
+const real = it => !it.data.ejemplo;              // lo cargado en las pruebas se ve, pero no suma
+const ofReal = k => of(k).filter(real);
+const ejTag = it => it.data.ejemplo?` <span class="pill warn">EJEMPLO</span>`:"";
 const refs = (k,ref) => ITEMS.filter(i=>i.kind===k && i.data.ref===ref);
 const latest = k => of(k).pop();
 
@@ -700,7 +703,7 @@ function tabOf(it){
   if(it.kind==="comment"){ if(String(it.data.ref).startsWith("seed")) return "comunicados"; const t=ITEMS.find(i=>i.id===it.data.ref); return t?KIND_TAB[t.kind]:null; }
   return KIND_TAB[it.kind]||null;
 }
-const isNew = (it,since) => (!ME || it.author!==ME.name) && new Date(it.created_at).getTime() > since;
+const isNew = (it,since) => real(it) && (!ME || it.author!==ME.name) && new Date(it.created_at).getTime() > since;
 function newCount(tab){ const since=TAB_SEEN[tab]||SEEN_PREV; return ITEMS.filter(i=>tabOf(i)===tab && isNew(i,since)).length; }
 function markSeen(tab){ TAB_SEEN[tab]=Date.now(); lsSet("pibex_seen_tabs",TAB_SEEN); }
 
@@ -786,7 +789,7 @@ function thread(ref,label="comentarios"){
   const cs = refs("comment",ref); const open = OPEN.has(ref) || cs.length<=2;
   return `<div class="thread">
     ${cs.length>2 && !OPEN.has(ref) ? `<button class="link" data-act="open" data-id="${ref}">Ver los ${cs.length} ${label}</button>`:""}
-    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div class="stack" style="gap:2px"><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${editBtn(c)}${delBtn(c)}</div>${msgText(c,"txt")}${likeBar(c.id)}</div></div>`).join(""):""}
+    ${open? cs.map(c=>`<div class="cmt">${av(c.author)}<div class="stack" style="gap:2px"><div class="row"><span class="who">${esc(c.author)}</span><span class="muted small">${ago(c.created_at)}</span>${ejTag(c)}${editBtn(c)}${delBtn(c)}</div>${msgText(c,"txt")}${likeBar(c.id)}</div></div>`).join(""):""}
     <form class="cform" data-form="comment" data-ref="${ref}"><input type="text" id="c-${ref}" name="text" placeholder="Comentar…" autocomplete="off" maxlength="500"><span data-slot="c-${ref}">${recSlot("c-"+ref)}</span><button class="btn sm">Enviar</button></form>
   </div>`;
 }
@@ -813,13 +816,13 @@ function allEvents(){
 
 /* ---- Truco ---- */
 const tmode = m => (m.data.mode||4);
-const tOk = m => m.data.ok!==false;
+const tOk = m => m.data.ok!==false || !!m.data.ejemplo;
 const tLosers = d => d.s1>d.s2 ? d.p2 : d.p1;
 const tCanConfirm = m => ME && !tOk(m) && (tLosers(m.data).includes(ME.name) || SUPER.includes(ME.name));
 const autoOk = d => tLosers(d).includes(ME.name) || SUPER.includes(ME.name);
 const teamName = t => t.join(" & ");
 function trucoStats(mode){
-  const ind={}, par={}; const ms=of("truco").filter(m=>tOk(m)&&(!mode||tmode(m)===mode));
+  const ind={}, par={}; const ms=of("truco").filter(m=>real(m)&&tOk(m)&&(!mode||tmode(m)===mode));
   const bump=(o,k,won,pf,pc)=>{o[k]=o[k]||{k,pj:0,pg:0,pp:0,pf:0,pc:0,seq:[]};const r=o[k];r.pj++;won?r.pg++:r.pp++;r.pf+=pf;r.pc+=pc;r.seq.push(won)};
   ms.forEach(m=>{const d=m.data;const w1=d.s1>d.s2;
     bump(par,[...d.p1].sort().join(" & "),w1,d.s1,d.s2); bump(par,[...d.p2].sort().join(" & "),!w1,d.s2,d.s1);
@@ -852,7 +855,7 @@ function bracket(t){
     rounds.push(ms); cur=next; r++; }
   const champ=cur[0]; return {rounds,champion:(champ!=null&&champ!=="BYE")?t.teams[champ]:null};
 }
-function torneos(){ return of("torneo").map(it=>({...it.data,id:it.id,item:it})); }
+function torneos(){ return ofReal("torneo").map(it=>({...it.data,id:it.id,item:it})); }
 function champOf(t){ return t.format==="liga"?ligaTable(t).champion:bracket(t).champion; }
 const roundName=(n,total,idx)=>n===1?"Final":n===2?"Semifinal":n===4?"Cuartos de final":"Ronda "+(idx+1);
 let ANOT=lsGet("pibex_anot");
@@ -945,18 +948,18 @@ inicio(){
   const nextEv=evs.filter(e=>(e.fixed||e.status==="ok")&&e.when&&e.when>now).sort((a,b)=>a.when-b.when)[0];
   const claimed=PEOPLE.filter(p=>PERFILES[p]); const missing=PEOPLE.filter(p=>!PERFILES[p]);
   const tr=trucoStats(); const lead=tr.par[0];
-  const photos=of("photo"); const topPh=photos.slice().sort((a,b)=>likes(b.id).length-likes(a.id).length)[0];
-  const talk={}; [...of("post"),...of("comment")].forEach(i=>talk[i.author]=(talk[i.author]||0)+1); const charla=Object.entries(talk).sort((a,b)=>b[1]-a[1])[0];
+  const photos=ofReal("photo"); const topPh=photos.slice().sort((a,b)=>likes(b.id).length-likes(a.id).length)[0];
+  const talk={}; [...ofReal("post"),...ofReal("comment")].forEach(i=>talk[i.author]=(talk[i.author]||0)+1); const charla=Object.entries(talk).sort((a,b)=>b[1]-a[1])[0];
   const aw=awardsCfg(); const voters=new Set(of("vote").map(v=>v.author)).size;
   const rc=roomsCfg(); const myRoom=ME&&rc.assign&&rc.assign[ME.name]?rc.rooms.find(r=>r.id===rc.assign[ME.name]):null;
   const tc=teamsCfg(); const myTeam=ME&&tc.drawnAt&&tc.assign[ME.name]!=null?tc.assign[ME.name]:null;
   const myNights=myTeam!=null?NIGHTS.filter((_,i)=>i%tc.count===myTeam).map(d=>d[1]):[];
   const feedKinds={post:"publicó en el muro",comment:"comentó",event:"propuso un plan",photo:"subió un archivo",truco:"cargó un partido de truco",comunicado:"emitió un comunicado",place:"sugirió un lugar"};
-  const nuevos=ITEMS.filter(i=>feedKinds[i.kind]&&isNew(i,SEEN_PREV));
-  const feed=(nuevos.length?nuevos:ITEMS.filter(i=>feedKinds[i.kind])).slice(-10).reverse();
+  const nuevos=ITEMS.filter(i=>real(i)&&feedKinds[i.kind]&&isNew(i,SEEN_PREV));
+  const feed=(nuevos.length?nuevos:ITEMS.filter(i=>real(i)&&feedKinds[i.kind])).slice(-10).reverse();
   const tile=(tab,lbl,big,sub)=>`<button class="tile" data-tab="${tab}"><span class="lbl">${lbl}</span><span class="big">${big}</span>${sub?`<span class="sub">${sub}</span>`:""}</button>`;
   const pinReqs=ME&&SUPER.includes(ME.name)?of("pin_reset").filter(r=>!r.data.done):[];
-  const toConfirm=of("truco").filter(m=>!tOk(m)&&ME&&tLosers(m.data).includes(ME.name));
+  const toConfirm=ofReal("truco").filter(m=>!tOk(m)&&ME&&tLosers(m.data).includes(ME.name));
   return `${toConfirm.length?`<button class="banner" data-tab="truco" style="text-align:left;cursor:pointer">🃏 <b>Tenés ${toConfirm.length} ${toConfirm.length===1?"partido":"partidos"} de truco para confirmar.</b> Si perdiste, confirmalo; si no existió, tocá «No fue así».</button>`:""}${pinReqs.length?`<button class="banner" data-tab="comisiones" style="text-align:left;cursor:pointer">🔑 <b>${pinReqs.length} ${pinReqs.length===1?"pedido":"pedidos"} de blanqueo de PIN</b> (${esc(pinReqs.map(r=>r.author).join(", "))}). Tocá para resolver.</button>`:""}
   <section class="sheet official">
     <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
@@ -971,8 +974,8 @@ inicio(){
     ${tile("awards","Choice Awards",aw.phase==="hidden"?"🔒":aw.phase==="voting"?voters:"🏆",aw.phase==="hidden"?"Categorías en deliberación":aw.phase==="voting"?"ya votaron":"Resultados revelados")}
     ${tile("cuartos","Cuartos",rc.drawnAt?"✓":"—",rc.drawnAt?"Sorteo realizado":"Sorteo pendiente")}
     ${tile("equipos","Equipos de cocina",tc.drawnAt?tc.count:"—",tc.drawnAt?"equipos sorteados":"Sorteo pendiente")}
-    ${tile("fotos","Fotos y videos",photos.length,photos.length?`${of("like").length} me gusta repartidos`:"Todavía ninguna")}
-    ${tile("muro","Muro",of("post").length,`${of("comment").length} comentarios`)}
+    ${tile("fotos","Fotos y videos",photos.length,photos.length?`${ofReal("like").length} me gusta repartidos`:"Todavía ninguna")}
+    ${tile("muro","Muro",ofReal("post").length,`${ofReal("comment").length} comentarios`)}
   </div>
   <div class="grid2">
     <section class="sheet"><span class="eyebrow">Último comunicado · N.º ${com.num}</span><h3>${esc(com.data.title)}</h3>
@@ -1032,7 +1035,7 @@ muro(){
   const posts=of("post").slice().reverse();
   return `<div class="head"><span class="eyebrow">Foro general</span><h2>El Muro</h2><p>Ideas, preguntas, chicanas, todo. Cada publicación avisa al celular de los que activaron los avisos.</p></div>
   <form class="sheet" data-form="post"><div class="field"><label for="post-t">Publicar</label><textarea id="post-t" name="text" maxlength="2000" placeholder="¿Quién lleva el parlante? (o mandá un audio)"></textarea></div><div class="row"><span data-slot="post">${recSlot("post")}</span><button class="btn">Publicar</button></div></form>
-  ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${editBtn(p)}${delBtn(p)}</div>${msgText(p,"txt")}${likeBar(p.id)}${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
+  ${posts.length?posts.map(p=>`<article class="sheet post"><div class="meta">${av(p.author)}<b>${esc(p.author)}</b><span class="muted small">${ago(p.created_at)}</span>${ejTag(p)}${editBtn(p)}${delBtn(p)}</div>${msgText(p,"txt")}${likeBar(p.id)}${thread(p.id,"respuestas")}</article>`).join(""):`<p class="empty">Nadie escribió todavía. Inaugurá el muro.</p>`}`;
 },
 
 fotos(){
@@ -1043,7 +1046,7 @@ fotos(){
     <div class="field"><label for="ph-c">Epígrafe para todas (opcional)</label><input type="text" id="ph-c" name="caption" maxlength="140"></div></div>
     <div class="row"><button class="btn" id="ph-btn">Subir</button><span class="muted small" id="ph-status">Videos de hasta 50 MB (unos 30 segundos en buena calidad).</span></div></form>
   ${ph.length?`<div class="row between"><span class="eyebrow">${ph.length} archivos</span><div class="seg"><button data-act="psort" data-id="new" aria-pressed="${PHOTO_SORT==="new"}">Recientes</button><button data-act="psort" data-id="top" aria-pressed="${PHOTO_SORT==="top"}">Más likeadas</button></div></div>
-  <div class="photos">${ph.map(p=>{const n=likes(p.id).length;return `<button class="ph" data-act="photo" data-id="${p.id}">${p.data.type==="video"?(p.data.thumb?`<img src="${esc(p.data.thumb)}" alt="Video de ${esc(p.author)}" loading="lazy"><span class="play">▶</span>`:`<video src="${esc(p.data.url)}#t=0.5" muted playsinline preload="none"></video><span class="vidbg"></span><span class="play">▶</span>`):`<img src="${esc(p.data.thumb||p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy">`}${n?`<span class="lk">❤️ ${n}</span>`:""}<span>${esc(p.data.caption||p.author)}</span></button>`}).join("")}</div>`:`<p class="empty">Todavía no hay nada. Arranquen con una del 2015 para calentar.</p>`}`;
+  <div class="photos">${ph.map(p=>{const n=likes(p.id).length;return `<button class="ph" data-act="photo" data-id="${p.id}">${p.data.type==="video"?(p.data.thumb?`<img src="${esc(p.data.thumb)}" alt="Video de ${esc(p.author)}" loading="lazy"><span class="play">▶</span>`:`<video src="${esc(p.data.url)}#t=0.5" muted playsinline preload="none"></video><span class="vidbg"></span><span class="play">▶</span>`):`<img src="${esc(p.data.thumb||p.data.url)}" alt="${esc(p.data.caption||"Foto de "+p.author)}" loading="lazy">`}${n?`<span class="lk">❤️ ${n}</span>`:""}<span>${p.data.ejemplo?"EJEMPLO · ":""}${esc(p.data.caption||p.author)}</span></button>`}).join("")}</div>`:`<p class="empty">Todavía no hay nada. Arranquen con una del 2015 para calentar.</p>`}`;
 },
 
 truco(){
@@ -1051,7 +1054,7 @@ truco(){
   <div class="seg big2"><button data-act="tsub" data-id="partidos" aria-pressed="${TRUCO_SUB==="partidos"}">Partidos y rankings</button><button data-act="tsub" data-id="anotador" aria-pressed="${TRUCO_SUB==="anotador"}">Anotador</button><button data-act="tsub" data-id="torneos" aria-pressed="${TRUCO_SUB==="torneos"}">Torneos</button></div>`;
   const champs=torneos().map(t=>({t,c:champOf(t)})).filter(x=>x.c);
   const fame=champs.length?`<section class="sheet official"><span class="eyebrow">Salón de la fama</span>${champs.slice().reverse().map(({t,c})=>`<div class="row between"><span>🏆 <b>${esc(teamName(c))}</b></span><span class="muted small">${esc(t.name)} · de a ${t.mode}</span></div>`).join("")}</section>`:"";
-  const pend=of("truco").filter(m=>!tOk(m));
+  const pend=ofReal("truco").filter(m=>!tOk(m));
   const pendBox=pend.length?`<section class="org"><span class="eyebrow">Partidos a confirmar · ${pend.length}</span><p class="small">Cuentan cuando confirma alguien del equipo que perdió.</p>
     ${pend.map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="stack" style="gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px"><span><b>${esc(teamName(w?d.p1:d.p2))}</b> le ganó <span class="mono">${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)}</span> a <b>${esc(teamName(w?d.p2:d.p1))}</b></span>
       <span class="small muted">Cargó ${esc(m.author)} · ${ago(m.created_at)}</span>
@@ -1069,7 +1072,7 @@ truco(){
     </div><p class="small muted">Un jugador no puede estar en los dos lados.</p><div><button class="btn">Cargar resultado</button></div></form>
   ${fame}
   ${[4,6].map(rankBlock).join("")}
-  ${(()=>{const ms=of("truco");return ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;const t=d.tid&&torneos().find(x=>x.id===d.tid);return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(teamName(d.p1))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(teamName(d.p2))}</b> <span class="pill info">de a ${tmode(m)}</span>${t?` <span class="pill warn">${esc(t.name)}</span>`:""}${tOk(m)?"":` <span class="pill bad">a confirmar</span>`}</span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""})()}`;
+  ${(()=>{const ms=of("truco");return ms.length?`<section class="sheet"><span class="eyebrow">Historial</span>${ms.slice().reverse().map(m=>{const d=m.data;const w=d.s1>d.s2;const t=d.tid&&torneos().find(x=>x.id===d.tid);return `<div class="row between small"><span><b style="${w?"":"font-weight:400"}">${esc(teamName(d.p1))}</b> <span class="mono">${d.s1}–${d.s2}</span> <b style="${w?"font-weight:400":""}">${esc(teamName(d.p2))}</b> <span class="pill info">de a ${tmode(m)}</span>${ejTag(m)}${t?` <span class="pill warn">${esc(t.name)}</span>`:""}${tOk(m)?"":` <span class="pill bad">a confirmar</span>`}</span><span class="muted">${ago(m.created_at)} · ${esc(m.author)} ${delBtn(m)}</span></div>`}).join("")}</section>`:""})()}`;
 },
 
 awards(){
