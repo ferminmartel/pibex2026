@@ -438,6 +438,9 @@ button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
 .btn.sumar{font-size:1.4rem;padding:12px 26px}
 .gate{justify-items:center;text-align:center;padding-block:32px}
 .gate img{width:120px;height:120px;border-radius:50%}
+.rec-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E0413A;margin-right:4px;vertical-align:1px}
+@media (prefers-reduced-motion:no-preference){.rec-dot{animation:pulse 1.2s ease-in-out infinite}}
+.sheet.live{border:2px solid #E0413A}
 
 </style>
 
@@ -864,13 +867,25 @@ function fosforos(n){ // n = 0..15 → 3 cuadraditos de 5 fósforos
   const box=k=>{ const L=[[6,6,54,6],[54,6,54,54],[54,54,6,54],[6,54,6,6],[6,54,54,6]]; return `<svg viewBox="0 0 60 60" class="caja" aria-hidden="true">${L.slice(0,k).map(([x1,y1,x2,y2])=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="palo"/><circle cx="${x2}" cy="${y2}" r="3.6" class="cabeza"/>`).join("")}</svg>`; };
   return [0,1,2].map(i=>box(Math.max(0,Math.min(5,n-i*5)))).join("");
 }
+const LIVE_MAX_H = 3;
+const vivos = () => of("vivo").filter(v=>Date.now()-(v.data.ts||0) < LIVE_MAX_H*3600000);
+async function liveSync(){ if(!ANOT||!ANOT.vid) return; try{ await Store.update(ANOT.vid,{s:ANOT.s,ts:Date.now()}); }catch(e){} }
+async function liveEnd(){ if(ANOT&&ANOT.vid){ try{ await Store.remove(ANOT.vid); }catch(e){} } }
+function liveBox(compact){
+  const vs=vivos().filter(v=>!ANOT||v.id!==ANOT.vid); if(!vs.length) return "";
+  return vs.map(v=>{ const d=v.data; const lbl=d.mode===4?"Pareja":"Equipo"; const nm=i=>d.p[i].filter(Boolean).length?teamName(d.p[i].filter(Boolean)):lbl+" "+(i+1);
+    const st=n=>n<15?"Malas · "+n:n<30?"Buenas · "+(n-15):"¡Ganó!";
+    return `<section class="sheet live"><div class="row between"><span class="eyebrow"><span class="rec-dot"></span> Truco en vivo · de a ${d.mode}</span><span class="small muted">anota ${esc(v.author)}</span></div>
+      ${compact?`<div class="row between"><b>${esc(nm(0))}</b><span class="big">${d.s[0]} – ${d.s[1]}</span><b style="text-align:right">${esc(nm(1))}</b></div><button class="link" data-tab="truco">Verlo</button>`
+      :`<div class="anots">${[0,1].map(i=>`<div class="anot ${d.s[i]>=30?"gano":""}"><b class="anm">${esc(nm(i))}</b><div class="tanto">${st(d.s[i])}</div><div class="fos"><span class="eyebrow">Malas</span>${fosforos(Math.min(15,d.s[i]))}</div><div class="fos sep"><span class="eyebrow">Buenas</span>${fosforos(Math.max(0,d.s[i]-15))}</div></div>`).join("")}</div>`}</section>`; }).join("");
+}
 function anotadorView(){
   const lbl=TRUCO_MODE===4?"Pareja":"Equipo"; const sz=TRUCO_MODE/2;
   if(!ANOT){ const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts("","(opcional)")}</select>`).join("");
     return `<form class="sheet" data-form="anot-start"><span class="eyebrow">Anotador con fósforos</span>
       <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6</button></div></div>
       <div class="grid2"><div class="stack"><b>${lbl} 1</b><div class="fgrid">${sideSel("a")}</div></div><div class="stack"><b>${lbl} 2</b><div class="fgrid">${sideSel("b")}</div></div></div>
-      <p class="small muted">Los nombres son opcionales. Si los cargás, al terminar el partido lo guardás en el ranking con un toque. El anotador queda guardado en este celu aunque cierres la web.</p>
+      <p class="small muted">Los nombres son opcionales. Mientras anotás, todos lo pueden seguir <b>en vivo</b> desde su celu. Al terminar lo guardás en el ranking con un toque.</p>
       <div><button class="btn">Empezar partido</button></div></form>`; }
   const A=ANOT, win=A.s[0]>=30?0:A.s[1]>=30?1:-1;
   const side=i=>{ const n=A.s[i], malas=Math.min(15,n), buenas=Math.max(0,n-15); const nm=A.p[i].filter(Boolean).length?teamName(A.p[i].filter(Boolean)):lbl+" "+(i+1);
@@ -878,7 +893,7 @@ function anotadorView(){
       <div class="fos"><span class="eyebrow">Malas</span>${fosforos(malas)}</div><div class="fos sep"><span class="eyebrow">Buenas</span>${fosforos(buenas)}</div>
       <div class="row" style="justify-content:center"><button class="btn sumar" data-act="anot-add" data-id="${i}" ${win>=0?"disabled":""}>+1</button><button class="btn ghost sm" data-act="anot-sub" data-id="${i}" ${n===0?"disabled":""}>−1</button></div></div>`; };
   const full=A.p.every(t=>t.length===A.mode/2&&t.every(Boolean));
-  return `<section class="sheet"><div class="row between"><span class="eyebrow">Anotador · de a ${A.mode} · a 30</span>${armBtn("anot-reset","Terminar / nuevo partido","Confirmar: se borra este anotador","anot-reset","btn ghost sm")}</div>
+  return `<section class="sheet"><div class="row between"><span class="eyebrow">${A.vid?'<span class="rec-dot"></span> En vivo · ':""}Anotador · de a ${A.mode} · a 30</span>${armBtn("anot-reset","Terminar / nuevo partido","Confirmar: se borra este anotador","anot-reset","btn ghost sm")}</div>
     <div class="anots">${side(0)}${side(1)}</div>
     ${win>=0?`<div class="champ">🏆 Ganó <b>${esc(A.p[win].filter(Boolean).length?teamName(A.p[win].filter(Boolean)):lbl+" "+(win+1))}</b> · ${A.s[0]} a ${A.s[1]}
       ${full?`<div style="margin-top:8px"><button class="btn" data-act="anot-save">Guardar en el ranking</button></div>`:`<p class="small muted">Como no cargaste los nombres, no se guarda en el ranking.</p>`}</div>`:""}</section>`;
@@ -961,6 +976,7 @@ inicio(){
   const pinReqs=ME&&SUPER.includes(ME.name)?of("pin_reset").filter(r=>!r.data.done):[];
   const toConfirm=ofReal("truco").filter(m=>!tOk(m)&&ME&&tLosers(m.data).includes(ME.name));
   return `${toConfirm.length?`<button class="banner" data-tab="truco" style="text-align:left;cursor:pointer">🃏 <b>Tenés ${toConfirm.length} ${toConfirm.length===1?"partido":"partidos"} de truco para confirmar.</b> Si perdiste, confirmalo; si no existió, tocá «No fue así».</button>`:""}${pinReqs.length?`<button class="banner" data-tab="comisiones" style="text-align:left;cursor:pointer">🔑 <b>${pinReqs.length} ${pinReqs.length===1?"pedido":"pedidos"} de blanqueo de PIN</b> (${esc(pinReqs.map(r=>r.author).join(", "))}). Tocá para resolver.</button>`:""}
+  ${liveBox(true)}
   <section class="sheet official">
     <span class="eyebrow" id="cd-label">${now<TRIP_START?"Faltan para el viaje":"PIBEX en curso"}</span>
     <div class="count" id="countdown">${countdownHTML()}</div>
@@ -1023,7 +1039,8 @@ cronograma(){
       <div class="field"><label for="ev-d">Día</label><select id="ev-d" name="day">${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div>
       <div class="field"><label for="ev-h">Hora</label><input type="time" id="ev-h" name="time"></div></div>
     <div class="field"><label for="ev-t">Qué</label><input type="text" id="ev-t" name="title" required placeholder="Ej: Catamarán a Isla Victoria"></div>
-    <div class="field"><label for="ev-x">Detalle</label><input type="text" id="ev-x" name="desc" placeholder="Precio, punto de encuentro, qué llevar"></div>
+    <div class="field"><label for="ev-p">Precio por persona (opcional)</label><input type="text" id="ev-p" name="price" inputmode="numeric" placeholder="Ej: 25000 · vacío si es gratis"></div>
+    <div class="field"><label for="ev-x">Detalle</label><input type="text" id="ev-x" name="desc" placeholder="Punto de encuentro, qué llevar"></div>
     <div><button class="btn">${org?"Agregar al programa":"Enviar propuesta"}</button></div></form>
   ${pend.length?`<section class="org"><span class="eyebrow">Propuestas en revisión · ${pend.length}</span>${pend.map(evHTML).join("")}</section>`:""}
   ${DAYS.map(([d,l])=>{const list=evs.filter(e=>e.day===d&&(e.fixed||e.status==="ok")).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
@@ -1059,11 +1076,12 @@ truco(){
     ${pend.map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="stack" style="gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px"><span><b>${esc(teamName(w?d.p1:d.p2))}</b> le ganó <span class="mono">${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)}</span> a <b>${esc(teamName(w?d.p2:d.p1))}</b></span>
       <span class="small muted">Cargó ${esc(m.author)} · ${ago(m.created_at)}</span>
       ${tCanConfirm(m)?`<div class="row"><button class="btn sm" data-act="tconf" data-id="${m.id}">✓ Confirmar</button><button class="btn ghost sm" data-act="trej" data-id="${m.id}">✗ No fue así</button></div>`:`<span class="small">Esperando que confirme ${esc(tLosers(d).join(" o "))}.</span>`}</div>`}).join("")}</section>`:"";
-  if(TRUCO_SUB==="torneos") return head+pendBox+fame+torneosView();
-  if(TRUCO_SUB==="anotador") return head+pendBox+anotadorView();
+  const live=liveBox(false);
+  if(TRUCO_SUB==="torneos") return head+live+pendBox+fame+torneosView();
+  if(TRUCO_SUB==="anotador") return head+live+pendBox+anotadorView();
   const sz=TRUCO_MODE/2, lbl=TRUCO_MODE===4?"Pareja":"Equipo";
   const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts()}</select>`).join("");
-  return head+pendBox+`
+  return head+live+pendBox+`
   <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido suelto</span>
     <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4 · 2 parejas</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6 · 3 contra 3</button></div></div>
     <div class="grid2">
@@ -1198,7 +1216,14 @@ function evHTML(e){
     ${e.desc?`<span class="small">${esc(e.desc)}</span>`:""}
     <span class="muted small">Propuso ${esc(e.item.author)}${e.item.data.by?` · validó ${esc(e.item.data.by)}`:""} ${delBtn(e.item)}</span>
     ${pend&&org?`<div class="row"><button class="btn sm" data-act="ev-ok" data-id="${e.id}">Aprobar</button><button class="btn ghost sm" data-act="ev-no" data-id="${e.id}">Rechazar</button></div>`:""}
-    <div class="row"><button class="btn ${yo?"":"ghost"} sm" data-act="join" data-id="${e.id}">${yo?"✓ Voy":pend?"Me interesa":"Me sumo"}</button>${js.length?`<span class="small">${js.length}: <span class="muted">${esc(js.map(j=>j.author).join(", "))}</span></span>`:""}
+    ${(()=>{const si=js.filter(j=>j.data.v!=="no"), no=js.filter(j=>j.data.v==="no"); const mine=yo?(yo.data.v==="no"?"no":"si"):null;
+      const resp=new Set(js.map(j=>j.author)); const faltan=PEOPLE.filter(x=>!resp.has(x)).length;
+      const num=parseFloat(String(e.price||"").replace(/[^0-9,.]/g,"").replace(/\./g,"").replace(",","."));
+      return `${e.price?`<span class="small"><b>💲 ${/^[0-9.,\s]+$/.test(e.price)?ars(num):esc(e.price)}</b> por persona${num&&si.length?` · total aprox. <b>${ars(num*si.length)}</b>`:""}</span>`:""}
+      <div class="row"><button class="btn ${mine==="si"?"":"ghost"} sm" data-act="rsvp" data-id="${e.id}|si">${mine==="si"?"✓ Voy":"Voy"}</button><button class="btn ${mine==="no"?"red":"ghost"} sm" data-act="rsvp" data-id="${e.id}|no">${mine==="no"?"✕ No voy":"No voy"}</button><span class="small muted">${faltan} sin responder</span></div>
+      ${si.length?`<span class="small"><b>Van (${si.length}):</b> ${esc(si.map(j=>j.author).join(", "))}</span>`:""}
+      ${no.length?`<span class="small muted"><b>No van (${no.length}):</b> ${esc(no.map(j=>j.author).join(", "))}</span>`:""}
+      <div class="row">`})()}
     <button class="link" data-act="toggle" data-id="${e.id}">${OPEN.has("ev"+e.id)?"Ocultar":"Comentarios"}${n?` (${n})`:""}</button></div>
     ${OPEN.has("ev"+e.id)?thread(e.id):""}
   </div></div>`;
@@ -1345,6 +1370,8 @@ document.addEventListener("click", async ev=>{
     case "toggle": OPEN.has("ev"+id)?OPEN.delete("ev"+id):OPEN.add("ev"+id); render(); break;
     case "del": if(ARM!==id){ ARM=id; a.textContent="¿seguro? tocá de nuevo"; return; } ARM=null; await Store.remove(id); closeModal(); render(); toast("Borrado"); break;
     case "arm": ARM=id; render(); break;
+    case "rsvp": { if(!needMe())return; const [ref,v]=id.split("|"); const yo=refs("join",ref).find(j=>j.author===ME.name);
+      if(yo&&(yo.data.v||"si")===v) await Store.remove(yo.id); else if(yo) await Store.update(yo.id,{v}); else await Store.add("join",{ref,v}); render(); break; }
     case "join": { if(!needMe())return; const yo=refs("join",id).find(j=>j.author===ME.name); if(yo) await Store.remove(yo.id); else await Store.add("join",{ref:id}); render(); break; }
     case "ev-ok": { const it=ITEMS.find(i=>i.id===id); await Store.update(id,{status:"ok",by:ME.name}); notify("✅ Plan aprobado: "+it.data.title, dayLabel(it.data.day)+(it.data.time?" "+it.data.time:"")); render(); break; }
     case "ev-no": await Store.update(id,{status:"rechazado",by:ME.name}); render(); break;
@@ -1372,10 +1399,10 @@ document.addEventListener("click", async ev=>{
       await Store.update(id,{ok:true,conf_by:ME.name}); toast("Resultado confirmado");
       if(t){ const after=champOf(torneos().find(x=>x.id===t.id)); if(!before&&after) notify("🏆 Campeón del torneo "+t.name,teamName(after)); } render(); break; }
     case "trej": { const m=ITEMS.find(i=>i.id===id); if(!m||!tCanConfirm(m)) break; if(ARM!=="rej"+id){ ARM="rej"+id; a.textContent="¿Seguro? Se borra"; return; } ARM=null; await Store.remove(id); toast("Partido borrado"); render(); break; }
-    case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); } break;
-    case "anot-sub": if(ANOT&&ANOT.s[+id]>0){ ANOT.s[+id]--; saveAnot(); render(); } break;
-    case "anot-reset": ARM=null; ANOT=null; saveAnot(); render(); break;
-    case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; const dd={mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Guardado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
+    case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); liveSync(); } break;
+    case "anot-sub": if(ANOT&&ANOT.s[+id]>0){ ANOT.s[+id]--; saveAnot(); render(); liveSync(); } break;
+    case "anot-reset": ARM=null; await liveEnd(); ANOT=null; saveAnot(); render(); break;
+    case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; const dd={mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Guardado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); await liveEnd(); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
     case "tmode": TRUCO_MODE=+id; render(); break;
     case "tf": { const nm=$("#tf-name"); if(nm) TF.name=nm.value; const [k,v]=id.split(":"); TF[k]=k==="format"?v:+v; render(); break; }
     case "replay": playReveal(id); break;
@@ -1458,7 +1485,7 @@ document.addEventListener("submit", async ev=>{
       case "post": { const t=(d.text||"").trim(); if(REC&&REC.mr){ toast("Pará la grabación primero"); break; } const au=await takeAudio("post"); if(!t&&!au){ toast("Escribí algo o grabá un audio"); break; }
         await Store.add("post",{text:t,...(au||{})}); notify("📢 "+ME.name+" en el Muro",t||"🎙️ Mandó un audio"); break; }
       case "comunicado": { if(!C("comunicado")) break; const n=allComunicados().length+1; await Store.add("comunicado",{title:d.title.trim(),body:d.body.trim()}); notify("📜 Comunicado oficial N.º "+n,d.title); break; }
-      case "event": { const ok=C("cronograma"); const st=ok?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),status:st,by:ok?ME.name:undefined});
+      case "event": { const ok=C("cronograma"); const st=ok?"ok":"pendiente"; await Store.add("event",{day:d.day,time:d.time,title:d.title.trim(),desc:d.desc.trim(),price:(d.price||"").trim(),status:st,by:ok?ME.name:undefined});
         notify(ok?"🗓️ Nuevo plan: "+d.title:"📝 Propuesta para revisar: "+d.title, dayLabel(d.day)+(d.time?" "+d.time:"")+" · "+ME.name); toast(ok?"Agregado al programa":"Propuesta enviada. La organización la revisa."); break; }
       case "truco": { const sz=TRUCO_MODE/2;
         const p1=[...Array(sz)].map((_,j)=>d["a"+(j+1)]), p2=[...Array(sz)].map((_,j)=>d["b"+(j+1)]); const all=[...p1,...p2];
@@ -1467,7 +1494,8 @@ document.addEventListener("submit", async ev=>{
         const dd={mode:TRUCO_MODE,p1,p2,s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Cargado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${p1.join(" & ")} ${s1}–${s2} ${p2.join(" & ")}`); break; }
       case "anot-start": { const sz=TRUCO_MODE/2; const p=["a","b"].map(x=>[...Array(sz)].map((_,j)=>d[x+(j+1)]||""));
         const all=p.flat().filter(Boolean); if(new Set(all).size<all.length){ toast("Hay un jugador repetido"); break; }
-        ANOT={mode:TRUCO_MODE,p,s:[0,0]}; saveAnot(); break; }
+        ANOT={mode:TRUCO_MODE,p,s:[0,0]}; if(ONLINE||true){ try{ const it=await Store.add("vivo",{mode:TRUCO_MODE,p,s:[0,0],ts:Date.now()}); ANOT.vid=it.id; }catch(e){} }
+        saveAnot(); if(p.flat().some(Boolean)) notify("🔴 Truco en vivo",`${teamName(p[0].filter(Boolean))||"Pareja 1"} vs ${teamName(p[1].filter(Boolean))||"Pareja 2"} · seguilo en la web`); break; }
       case "torneo": { const sz=TF.mode/2; const teams=[...Array(TF.n)].map((_,i)=>[...Array(sz)].map((_,j)=>d[`t${i}_${j}`]));
         const all=teams.flat(); if(all.some(x=>!x)){ toast("Completá todos los jugadores"); break; } if(new Set(all).size<all.length){ toast("Hay un jugador repetido"); break; }
         const name=(d.name||"").trim()||"Torneo"; await Store.add("torneo",{name,mode:TF.mode,format:TF.format,teams,order:shuffle([...teams.keys()])});
