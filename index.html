@@ -882,7 +882,12 @@ function fosforos(n){ // n = 0..15 → 3 cuadraditos de 5 fósforos
 }
 const LIVE_MAX_H = 3;
 const vivos = () => of("vivo").filter(v=>Date.now()-(v.data.ts||0) < LIVE_MAX_H*3600000);
-async function liveSync(){ if(!ANOT||!ANOT.vid) return; try{ await Store.update(ANOT.vid,{s:ANOT.s,ts:Date.now()}); }catch(e){} }
+async function liveSync(){ if(!ANOT||!ME) return;
+  try{
+    if(!ANOT.vid || !ITEMS.some(i=>i.id===ANOT.vid)){ const it=await Store.add("vivo",{mode:ANOT.mode,p:ANOT.p,s:ANOT.s,ts:Date.now()}); ANOT.vid=it.id; saveAnot(); render(); return; }
+    await Store.update(ANOT.vid,{s:ANOT.s,ts:Date.now()});
+  }catch(e){ console.error(e); }
+}
 async function liveEnd(){ if(ANOT&&ANOT.vid){ try{ await Store.remove(ANOT.vid); }catch(e){} } }
 function liveBox(compact){
   const vs=vivos().filter(v=>!ANOT||v.id!==ANOT.vid); if(!vs.length) return "";
