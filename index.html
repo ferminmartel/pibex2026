@@ -441,6 +441,18 @@ button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
 .rec-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E0413A;margin-right:4px;vertical-align:1px}
 @media (prefers-reduced-motion:no-preference){.rec-dot{animation:pulse 1.2s ease-in-out infinite}}
 .sheet.live{border:2px solid #E0413A}
+.livefs{background:#0E1A28;align-items:start;overflow:auto}
+.lfwrap{display:grid;gap:14px;justify-items:center;width:min(1100px,100%);padding:8px}
+.lfboard{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.lfside{border:2px solid rgba(251,245,228,.2);border-radius:12px;padding:14px 8px;display:grid;gap:6px;justify-items:center;text-align:center;color:#FBF5E4}
+.lfside.gano{border-color:#E9B65C;background:rgba(233,182,92,.15)}
+.lfname{font-family:var(--f-display);font-weight:700;font-size:clamp(.95rem,3vw,1.6rem);overflow-wrap:anywhere}
+.lfscore{font-family:var(--f-display);font-weight:800;font-size:clamp(4rem,18vw,9rem);line-height:.9}
+.lfstate{font-family:var(--f-display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#E9B65C}
+.lffos{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.lffos>div{display:grid;gap:2px}
+.lffos .sep{border-left:2px dashed rgba(251,245,228,.3);padding-left:10px}
+.lffos .caja{width:clamp(40px,9vw,70px);height:clamp(40px,9vw,70px)}
 
 </style>
 
@@ -739,6 +751,7 @@ function render(){
 }
 function liveRefresh(){
   if(REVEAL) return;
+  if(LIVE_FS){ liveFull(); return; }
   const a=document.activeElement;
   if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.value){ if(!PENDING){PENDING=true;const b=document.createElement("button");b.className="btn sm newpill";b.textContent="Hay novedades · actualizar";b.dataset.act="refresh";document.body.appendChild(b)} return; }
   if($("#overlay").innerHTML) return;
@@ -875,9 +888,22 @@ function liveBox(compact){
   const vs=vivos().filter(v=>!ANOT||v.id!==ANOT.vid); if(!vs.length) return "";
   return vs.map(v=>{ const d=v.data; const lbl=d.mode===4?"Pareja":"Equipo"; const nm=i=>d.p[i].filter(Boolean).length?teamName(d.p[i].filter(Boolean)):lbl+" "+(i+1);
     const st=n=>n<15?"Malas · "+n:n<30?"Buenas · "+(n-15):"¡Ganó!";
-    return `<section class="sheet live"><div class="row between"><span class="eyebrow"><span class="rec-dot"></span> Truco en vivo · de a ${d.mode}</span><span class="small muted">anota ${esc(v.author)}</span></div>
+    return `<section class="sheet live"><div class="row between"><span class="eyebrow"><span class="rec-dot"></span> Truco en vivo · de a ${d.mode}</span><span class="row"><span class="small muted">anota ${esc(v.author)}</span><button class="btn ghost sm" data-act="lf-open" data-id="${v.id}">📺 Pantalla en vivo</button></span></div>
       ${compact?`<div class="row between"><b>${esc(nm(0))}</b><span class="big">${d.s[0]} – ${d.s[1]}</span><b style="text-align:right">${esc(nm(1))}</b></div><button class="link" data-tab="truco">Verlo</button>`
       :`<div class="anots">${[0,1].map(i=>`<div class="anot ${d.s[i]>=30?"gano":""}"><b class="anm">${esc(nm(i))}</b><div class="tanto">${st(d.s[i])}</div><div class="fos"><span class="eyebrow">Malas</span>${fosforos(Math.min(15,d.s[i]))}</div><div class="fos sep"><span class="eyebrow">Buenas</span>${fosforos(Math.max(0,d.s[i]-15))}</div></div>`).join("")}</div>`}</section>`; }).join("");
+}
+let LIVE_FS=null; // id del partido en pantalla completa
+function liveFull(){
+  const v=of("vivo").find(x=>x.id===LIVE_FS)||(ANOT&&ANOT.vid===LIVE_FS?{id:LIVE_FS,author:ME.name,data:{mode:ANOT.mode,p:ANOT.p,s:ANOT.s}}:null);
+  if(!v){ $("#overlay").innerHTML=`<div class="lb livefs" data-act="close-bg"><div class="lfwrap"><h2>El partido terminó</h2><button class="btn" data-act="lf-close">Cerrar</button></div></div>`; return; }
+  const d=v.data, lbl=d.mode===4?"Pareja":"Equipo", nm=i=>d.p[i].filter(Boolean).length?teamName(d.p[i].filter(Boolean)):lbl+" "+(i+1);
+  const st=n=>n<15?"Malas · "+n:n<30?"Buenas · "+(n-15):"¡GANÓ!";
+  $("#overlay").innerHTML=`<div class="lb livefs"><div class="lfwrap">
+    <div class="row between" style="width:100%"><span class="eyebrow" style="color:#fff"><span class="rec-dot"></span> PIBEX 2026 · Truco en vivo · de a ${d.mode}</span><button class="btn ghost sm" data-act="lf-close">Cerrar</button></div>
+    <div class="lfboard">${[0,1].map(i=>`<div class="lfside ${d.s[i]>=30?"gano":""}"><div class="lfname">${esc(nm(i))}</div><div class="lfscore">${d.s[i]}</div><div class="lfstate">${st(d.s[i])}</div>
+      <div class="lffos"><div>${fosforos(Math.min(15,d.s[i]))}</div><div class="sep">${fosforos(Math.max(0,d.s[i]-15))}</div></div></div>`).join("")}</div>
+    <p class="small" style="opacity:.7">Anota ${esc(v.author)} · se actualiza solo</p></div></div>`;
+  try{ navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{}); }catch(e){}
 }
 function anotadorView(){
   const lbl=TRUCO_MODE===4?"Pareja":"Equipo"; const sz=TRUCO_MODE/2;
@@ -893,7 +919,7 @@ function anotadorView(){
       <div class="fos"><span class="eyebrow">Malas</span>${fosforos(malas)}</div><div class="fos sep"><span class="eyebrow">Buenas</span>${fosforos(buenas)}</div>
       <div class="row" style="justify-content:center"><button class="btn sumar" data-act="anot-add" data-id="${i}" ${win>=0?"disabled":""}>+1</button><button class="btn ghost sm" data-act="anot-sub" data-id="${i}" ${n===0?"disabled":""}>−1</button></div></div>`; };
   const full=A.p.every(t=>t.length===A.mode/2&&t.every(Boolean));
-  return `<section class="sheet"><div class="row between"><span class="eyebrow">${A.vid?'<span class="rec-dot"></span> En vivo · ':""}Anotador · de a ${A.mode} · a 30</span>${armBtn("anot-reset","Terminar / nuevo partido","Confirmar: se borra este anotador","anot-reset","btn ghost sm")}</div>
+  return `<section class="sheet"><div class="row between"><span class="eyebrow">${A.vid?'<span class="rec-dot"></span> En vivo · ':""}Anotador · de a ${A.mode} · a 30</span><span class="row">${A.vid?`<button class="btn ghost sm" data-act="lf-open" data-id="${A.vid}">📺 Pantalla</button>`:""}${armBtn("anot-reset","Terminar / nuevo partido","Confirmar: se borra este anotador","anot-reset","btn ghost sm")}</span></div>
     <div class="anots">${side(0)}${side(1)}</div>
     ${win>=0?`<div class="champ">🏆 Ganó <b>${esc(A.p[win].filter(Boolean).length?teamName(A.p[win].filter(Boolean)):lbl+" "+(win+1))}</b> · ${A.s[0]} a ${A.s[1]}
       ${full?`<div style="margin-top:8px"><button class="btn" data-act="anot-save">Guardar en el ranking</button></div>`:`<p class="small muted">Como no cargaste los nombres, no se guarda en el ranking.</p>`}</div>`:""}</section>`;
@@ -1395,11 +1421,13 @@ document.addEventListener("click", async ev=>{
     case "com-rm": { if(!SUPER.includes(ME.name)) break; const [k,n]=id.split("|"); const cfg=comCfg(); await saveCom({[k]:(cfg[k]||[]).filter(x=>x!==n)}); render(); break; }
     case "more": MORE_OPEN=!MORE_OPEN; renderTabs(); break;
     case "tsub": TRUCO_SUB=id; render(); break;
+    case "lf-open": LIVE_FS=id; liveFull(); break;
+    case "lf-close": LIVE_FS=null; closeModal(); break;
     case "tconf": { const m=ITEMS.find(i=>i.id===id); if(!m||!tCanConfirm(m)) break; const t=m.data.tid&&torneos().find(x=>x.id===m.data.tid); const before=t&&champOf(t);
       await Store.update(id,{ok:true,conf_by:ME.name}); toast("Resultado confirmado");
       if(t){ const after=champOf(torneos().find(x=>x.id===t.id)); if(!before&&after) notify("🏆 Campeón del torneo "+t.name,teamName(after)); } render(); break; }
     case "trej": { const m=ITEMS.find(i=>i.id===id); if(!m||!tCanConfirm(m)) break; if(ARM!=="rej"+id){ ARM="rej"+id; a.textContent="¿Seguro? Se borra"; return; } ARM=null; await Store.remove(id); toast("Partido borrado"); render(); break; }
-    case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); liveSync(); } break;
+    case "anot-add": if(ANOT&&ANOT.s[+id]<30){ ANOT.s[+id]++; saveAnot(); render(); if(LIVE_FS) liveFull(); if(ANOT.s[+id]===15) toast("¡Salió de las malas!"); if(ANOT.s[+id]===30) toast("¡Ganó! Tocá «Guardar en el ranking» para que cuente."); liveSync(); } break;
     case "anot-sub": if(ANOT&&ANOT.s[+id]>0){ ANOT.s[+id]--; saveAnot(); render(); liveSync(); } break;
     case "anot-reset": ARM=null; await liveEnd(); ANOT=null; saveAnot(); render(); break;
     case "anot-save": { if(!needMe()||!ANOT) break; const [s1,s2]=ANOT.s; const dd={mode:ANOT.mode,p1:ANOT.p[0],p2:ANOT.p[1],s1,s2}; dd.ok=autoOk(dd); await Store.add("truco",dd); if(!dd.ok) toast("Guardado. Cuenta cuando lo confirme alguien que perdió."); notify("🃏 Truco",`${teamName(ANOT.p[0])} ${s1}–${s2} ${teamName(ANOT.p[1])}`); await liveEnd(); ANOT=null; saveAnot(); TRUCO_SUB="partidos"; toast("Partido guardado en el ranking"); render(); break; }
