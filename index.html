@@ -453,6 +453,7 @@ button.banner{display:block;width:100%;font:inherit;color:var(--ink)}
 .lffos>div{display:grid;gap:2px}
 .lffos .sep{border-left:2px dashed rgba(251,245,228,.3);padding-left:10px}
 .lffos .caja{width:clamp(40px,9vw,70px);height:clamp(40px,9vw,70px)}
+.seg.big2 button{min-width:0}
 
 </style>
 
@@ -1099,7 +1100,7 @@ fotos(){
 
 truco(){
   const head=`<div class="head"><span class="eyebrow">Campeonato Patagónico de Truco</span><h2>Truco</h2></div>
-  <div class="seg big2"><button data-act="tsub" data-id="partidos" aria-pressed="${TRUCO_SUB==="partidos"}">Partidos y rankings</button><button data-act="tsub" data-id="anotador" aria-pressed="${TRUCO_SUB==="anotador"}">Anotador</button><button data-act="tsub" data-id="torneos" aria-pressed="${TRUCO_SUB==="torneos"}">Torneos</button></div>`;
+  <div class="seg big2"><button data-act="tsub" data-id="partidos" aria-pressed="${TRUCO_SUB==="partidos"}">Partidos y rankings</button><button data-act="tsub" data-id="anotador" aria-pressed="${TRUCO_SUB==="anotador"}">Anotador</button><button data-act="tsub" data-id="torneos" aria-pressed="${TRUCO_SUB==="torneos"}">Torneos</button><button data-act="tsub" data-id="vivo" aria-pressed="${TRUCO_SUB==="vivo"}"><span class="rec-dot"></span> En vivo${vivos().length?` (${vivos().length})`:""}</button></div>`;
   const champs=torneos().map(t=>({t,c:champOf(t)})).filter(x=>x.c);
   const fame=champs.length?`<section class="sheet official"><span class="eyebrow">Salón de la fama</span>${champs.slice().reverse().map(({t,c})=>`<div class="row between"><span>🏆 <b>${esc(teamName(c))}</b></span><span class="muted small">${esc(t.name)} · de a ${t.mode}</span></div>`).join("")}</section>`:"";
   const pend=ofReal("truco").filter(m=>!tOk(m));
@@ -1107,12 +1108,15 @@ truco(){
     ${pend.map(m=>{const d=m.data;const w=d.s1>d.s2;return `<div class="stack" style="gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px"><span><b>${esc(teamName(w?d.p1:d.p2))}</b> le ganó <span class="mono">${Math.max(d.s1,d.s2)}–${Math.min(d.s1,d.s2)}</span> a <b>${esc(teamName(w?d.p2:d.p1))}</b></span>
       <span class="small muted">Cargó ${esc(m.author)} · ${ago(m.created_at)}</span>
       ${tCanConfirm(m)?`<div class="row"><button class="btn sm" data-act="tconf" data-id="${m.id}">✓ Confirmar</button><button class="btn ghost sm" data-act="trej" data-id="${m.id}">✗ No fue así</button></div>`:`<span class="small">Esperando que confirme ${esc(tLosers(d).join(" o "))}.</span>`}</div>`}).join("")}</section>`:"";
-  const live=liveBox(false);
+  if(TRUCO_SUB==="vivo"){ const all=vivos(); return head+(all.length?liveBox(false)+(ANOT&&ANOT.vid?`<p class="small muted">Tu propio partido lo ves en el Anotador.</p>`:""):`<section class="sheet official"><span class="eyebrow"><span class="rec-dot"></span> En vivo</span><h3>No hay partidos en este momento</h3>
+    <p class="muted">Cuando alguien arranca un partido en el <b>Anotador</b>, aparece acá con los fósforos y se actualiza solo con cada punto. También sale en el Inicio y llega un aviso al celu.</p>
+    <div><button class="btn sm" data-act="tsub" data-id="anotador">Ir al Anotador</button></div></section>`); }
+  const live=TRUCO_SUB==="partidos"?"":liveBox(false);
   if(TRUCO_SUB==="torneos") return head+live+pendBox+fame+torneosView();
   if(TRUCO_SUB==="anotador") return head+live+pendBox+anotadorView();
   const sz=TRUCO_MODE/2, lbl=TRUCO_MODE===4?"Pareja":"Equipo";
   const sideSel=(side)=>[...Array(sz)].map((_,j)=>`<select id="t-${side}${j+1}" name="${side}${j+1}" data-grp="t" data-team="${side==="a"?0:1}" aria-label="${lbl} ${side==="a"?1:2}, jugador ${j+1}">${personOpts()}</select>`).join("");
-  return head+live+pendBox+`
+  return head+liveBox(false)+pendBox+`
   <form class="sheet" data-form="truco"><span class="eyebrow">Cargar partido suelto</span>
     <div class="row"><span class="small">Modalidad:</span><div class="seg"><button type="button" data-act="tmode" data-id="4" aria-pressed="${TRUCO_MODE===4}">De a 4 · 2 parejas</button><button type="button" data-act="tmode" data-id="6" aria-pressed="${TRUCO_MODE===6}">De a 6 · 3 contra 3</button></div></div>
     <div class="grid2">
